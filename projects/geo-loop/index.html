@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GEO-Loop · Lintong Han</title>
+<meta name="description" content="GEO-Loop: a multi-agent system that plans, writes, checks and publishes content, then measures whether AI answer engines mention it.">
+<link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column (about 68ch) with one wide band for the loop diagram; data set in mono like a ledger. */
+:root {
+  --bg: #f5f7f8;
+  --surface: #ffffff;
+  --ink: #14212b;
+  --muted: #56646f;
+  --line: #d9e0e5;
+  --accent: #0d7a73;
+  --accent-soft: #dcefed;
+  --warn: #b5651d;
+  --warn-soft: #f6e7d8;
+  --display: "Bricolage Grotesque", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --body: "Source Sans 3", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f171d; --surface: #16222a; --ink: #e6edf1; --muted: #9aa9b3; --line: #2a3a45;
+    --accent: #4cc2b8; --accent-soft: #163a3a; --warn: #e3a062; --warn-soft: #3a2a1c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f171d; --surface: #16222a; --ink: #e6edf1; --muted: #9aa9b3; --line: #2a3a45;
+  --accent: #4cc2b8; --accent-soft: #163a3a; --warn: #e3a062; --warn-soft: #3a2a1c; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 17px/1.6 var(--body); }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 40px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 56px; }
+.col { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.55rem; font-weight: 700; }
+h3 { font-size: 1.05rem; font-weight: 500; }
+p { margin: 0; }
+.eyebrow { font: 500 0.78rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.muted { color: var(--muted); }
+.stack { display: grid; gap: 14px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.lang button { font: 500 0.85rem var(--body); border: 0; background: transparent; color: var(--muted); padding: 6px 14px; cursor: pointer; }
+.lang button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hero { display: grid; gap: 18px; }
+.lede { font-size: 1.2rem; max-width: 60ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font: 400 0.9rem var(--mono); color: var(--muted); }
+/* language switching */
+:root[data-lang="en"] [lang="zh"], :root[data-lang="zh"] [lang="en"] { display: none !important; }
+/* loop band */
+.band { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; align-items: center; }
+.band svg { width: 100%; height: auto; display: block; }
+.node rect { fill: var(--bg); stroke: var(--line); stroke-width: 1.2; transition: fill .15s; }
+.node text { fill: var(--ink); font: 500 13px var(--body); }
+.node .num { fill: var(--muted); font: 400 10px var(--mono); }
+.node { cursor: pointer; }
+.node:hover rect { stroke: var(--accent); }
+.node.on rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.8; }
+.node.ctrl rect { stroke-dasharray: 4 3; }
+.track { fill: none; stroke: var(--line); stroke-width: 2; }
+.chev { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.center { fill: var(--muted); font: 400 12px var(--mono); }
+.detail { display: grid; gap: 10px; min-width: 0; }
+.detail .step { font: 500 0.8rem var(--mono); color: var(--accent); }
+.legend { font: 400 0.8rem var(--mono); color: var(--muted); }
+/* numbers */
+.figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.fig { padding: 18px 16px 18px 0; display: grid; gap: 4px; align-content: start; }
+.fig b { font: 500 1.9rem/1 var(--mono); font-variant-numeric: tabular-nums; }
+.fig span { font-size: 0.92rem; color: var(--muted); }
+.note { font-size: 0.88rem; color: var(--muted); }
+.callout { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 14px 16px; border-radius: 0; }
+/* chart */
+.chart { display: grid; gap: 8px; }
+.row { display: grid; grid-template-columns: 11rem minmax(0, 1fr) 3.4rem; gap: 12px; align-items: center; font-size: 0.92rem; }
+.bar { height: 12px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+.row .v { font: 500 0.88rem var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.row .route { font: 400 0.75rem var(--mono); color: var(--muted); }
+/* lists */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 0.88rem; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.platforms { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+.platforms h3 { margin-bottom: 8px; }
+dl.stackdl { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 10px 18px; margin: 0; }
+dl.stackdl dt { font: 500 0.82rem var(--mono); color: var(--muted); padding-top: 2px; }
+dl.stackdl dd { margin: 0; }
+.paper { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 20px; display: grid; gap: 8px; }
+.paper .t { font-family: var(--display); font-size: 1.15rem; font-weight: 500; }
+footer { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 18px; }
+.shots { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+.shot { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
+.shot .frame { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.shot .bar3 { display: flex; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.shot .bar3 i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+.shot img { display: block; width: 100%; height: auto; max-width: 100%; }
+.shot figcaption { display: grid; gap: 2px; max-width: 72ch; }
+.shot figcaption b { font-family: var(--display); font-weight: 500; font-size: 1rem; }
+.shot figcaption span { color: var(--muted); font-size: 0.92rem; }
+/* two editions */
+.editions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.ed { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 12px; align-content: start; }
+.ed-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ed-head h3 { font-size: 1.25rem; font-weight: 700; }
+.ed-tag { font: 500 0.72rem var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 4px 8px; border-radius: 999px; }
+.ed dl { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 8px 12px; margin: 0; font-size: 0.93rem; }
+.ed dt { font: 500 0.76rem var(--mono); color: var(--muted); padding-top: 2px; text-transform: uppercase; letter-spacing: .04em; }
+.ed dd { margin: 0; }
+.shared { border: 1px dashed var(--line); border-radius: 14px; padding: 14px 18px; font-size: 0.93rem; color: var(--muted); }
+.shared b { color: var(--ink); }
+@media (max-width: 760px) {
+  .editions { grid-template-columns: minmax(0, 1fr); }
+  .band { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+  .row { grid-template-columns: 7.5rem minmax(0, 1fr) 3rem; }
+  dl.stackdl { grid-template-columns: minmax(0, 1fr); gap: 2px 0; }
+  dl.stackdl dd { margin-bottom: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="topbar">
+    <a class="eyebrow" href="../../#projects" style="text-decoration:none">← Lintong Han · Projects</a>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" id="btn-en" data-set="en" aria-pressed="true">English</button>
+      <button type="button" id="btn-zh" data-set="zh" aria-pressed="false">中文</button>
+    </div>
+  </div>
+
+  <header class="hero">
+    <h1>GEO-Loop</h1>
+    <p class="lede" lang="en">A multi-agent system that plans, writes, checks, adapts and publishes content across Chinese and global platforms, then measures whether AI answer engines mention it, and feeds what it learns into the next plan.</p>
+    <p class="lede" lang="zh">一个多智能体系统：规划、撰写、检查、按平台改写并发布内容，覆盖中国与海外平台；再检测 AI 答案引擎是否提到它，把结果用于下一轮计划。</p>
+    <div class="meta">
+      <span>Lintong Han · Mengran Wang</span>
+      <span lang="en">Designed, built and operated by the authors</span>
+      <span lang="zh">两位作者设计、开发并实际运行</span>
+    </div>
+  </header>
+
+  <section class="col stack" aria-labelledby="why">
+    <h2 id="why"><span lang="en">Why it exists</span><span lang="zh">为什么做这个</span></h2>
+    <p lang="en">People now ask an answer engine such as Doubao or Google's Gemini which provider to choose, and the engine names a few organisations. Research on Generative Engine Optimization (GEO) mostly asks how to rewrite one page so that it gets cited. In daily use, a team also has to decide which questions to answer, write something worth citing, adapt it to many platforms, publish it, confirm it is actually online, and check later whether the engines mention it. GEO-Loop handles these steps as one loop and records each of them.</p>
+    <p lang="zh">现在越来越多人直接问豆包、Google Gemini 这类 AI：“该选哪一家？”AI 会给出一个答案，点名几家机构。现有的生成式引擎优化（GEO）研究，大多只研究怎么改写一篇文章让 AI 引用。实际工作中还要决定回答哪些问题、写出值得引用的内容、适配多个平台、发布、确认真的上线，过一段时间再看 AI 有没有提到你。GEO-Loop 把这些步骤做成一个闭环，并把每一步都记录下来。</p>
+  </section>
+
+  <section class="stack" aria-labelledby="loop">
+    <div class="col stack">
+      <h2 id="loop"><span lang="en">The loop</span><span lang="zh">工作闭环</span></h2>
+      <p class="muted" lang="en">Select a stage to see what the system does there.</p>
+      <p class="muted" lang="zh">点击任一环节，查看系统在这一步做什么。</p>
+    </div>
+    <div class="band">
+      <svg viewBox="0 0 600 420" role="group" aria-label="Eight-stage loop">
+        <ellipse class="track" cx="300" cy="210" rx="230" ry="150"/>
+        <g class="chevs">
+          <path class="chev" d="M-5,-5 L3,0 L-5,5" transform="translate(388 71.4) rotate(15.1)"/>
+          <path class="chev" d="M-5,-5 L3,0 L-5,5" transform="translate(512.5 152.6) rotate(57.6)"/>
+          <path class="chev" d="M-5,-5 L3,0 L-5,5" transform="translate(512.5 267.4) rotate(122.4)"/>
+          <path class="chev" d="M-5,-5 L3,0 L-5,5" transform="translate(388 348.6) rotate(164.9)"/>
+          <path class="chev" d="M-5,-5 L3,0 L-5,5" transform="translate(212 348.6) rotate(-164.9)"/>
+          <path class="chev" d="M-5,-5 L3,0 L-5,5" transform="translate(87.5 267.4) rotate(-122.4)"/>
+          <path class="chev" d="M-5,-5 L3,0 L-5,5" transform="translate(87.5 152.6) rotate(-57.6)"/>
+          <path class="chev" d="M-5,-5 L3,0 L-5,5" transform="translate(212 71.4) rotate(-15.1)"/>
+        </g>
+        <text class="center" x="300" y="204" text-anchor="middle" lang="en">each wave</text>
+        <text class="center" x="300" y="222" text-anchor="middle" lang="en">informs the next</text>
+        <text class="center" x="300" y="214" text-anchor="middle" lang="zh">每一轮结果进入下一轮</text>
+        <g id="nodes"></g>
+      </svg>
+      <div class="detail" aria-live="polite">
+        <span class="step" id="d-step"></span>
+        <h3 id="d-title"></h3>
+        <p id="d-text"></p>
+        <p class="legend"><span lang="en">Dashed outline: release controls (gate, verification).</span><span lang="zh">虚线框：放行把关环节（发布门槛、核验）。</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="stack" aria-labelledby="editions">
+    <div class="col stack">
+      <h2 id="editions"><span lang="en">Two editions, one codebase</span><span lang="zh">国内版和海外版，同一套代码</span></h2>
+      <p class="muted" lang="en">The same loop faces two different ecosystems of answer engines and platforms. Most GEO research looks only at English engines.</p>
+      <p class="muted" lang="zh">同一个闭环，面对两套不同的 AI 答案引擎和平台生态。现有 GEO 研究几乎只看英文引擎。</p>
+    </div>
+    <div class="editions">
+      <div class="ed">
+        <div class="ed-head"><h3><span lang="en">China edition</span><span lang="zh">国内版</span></h3><span class="ed-tag">中文 · UTC+8</span></div>
+        <dl>
+          <dt lang="en">Platforms</dt><dt lang="zh">平台</dt><dd>WeChat Official Account, Xiaohongshu, Douyin, Baijiahao, Zhihu, Toutiao, Sohu, NetEase</dd>
+          <dt lang="en">Engines</dt><dt lang="zh">检测引擎</dt><dd lang="en">Doubao, Baidu AI Search, Yuanbao, DeepSeek, Kimi</dd><dd lang="zh">豆包、百度 AI 搜索、元宝、DeepSeek、Kimi</dd>
+          <dt lang="en">Content</dt><dt lang="zh">内容链路</dt><dd lang="en">Chinese master draft → native draft for each platform</dd><dd lang="zh">中文母稿 → 各平台原生稿</dd>
+          <dt lang="en">Publishing</dt><dt lang="zh">发布方式</dt><dd lang="en">Official APIs where they exist; dedicated logged-in browsers for the rest, pausing on login, CAPTCHA, or risk-control pages</dd><dd lang="zh">有官方 API 的用 API，其余用每个平台独立登录的专用浏览器；遇到登录、验证码或风控页面就暂停</dd>
+        </dl>
+      </div>
+      <div class="ed">
+        <div class="ed-head"><h3><span lang="en">Global edition</span><span lang="zh">海外版</span></h3><span class="ed-tag">English · US Eastern</span></div>
+        <dl>
+          <dt lang="en">Platforms</dt><dt lang="zh">平台</dt><dd>X, Facebook Page, Instagram, Reddit, Discord</dd>
+          <dt lang="en">Engines</dt><dt lang="zh">检测引擎</dt><dd lang="en">Google Gemini with Search</dd><dd lang="zh">Google Gemini（联网搜索）</dd>
+          <dt lang="en">Content</dt><dt lang="zh">内容链路</dt><dd lang="en">Chinese master draft → one English translation, reused while the master is unchanged → native English draft for each platform</dd><dd lang="zh">中文母稿 → 翻译一次英文母稿（母稿不变就复用）→ 各平台英文原生稿</dd>
+          <dt lang="en">Publishing</dt><dt lang="zh">发布方式</dt><dd lang="en">Official APIs only, with users authorizing through OAuth, so no platform passwords are stored. This is the form a multi-user cloud service can run.</dd><dd lang="zh">全部走官方 API，用户通过 OAuth 自己授权，不保管平台密码。这是能做成多用户云服务的形态。</dd>
+        </dl>
+      </div>
+    </div>
+    <p class="shared" lang="en"><b>Shared:</b> the eight-stage loop, the GEO gate, the append-only publishing ledger, owned websites (brand site and answer site), and a Chinese or English workbench interface. The deployment figures below come from the China edition.</p>
+    <p class="shared" lang="zh"><b>两版共用：</b>八步闭环、GEO 发布门槛、只增不删的发布记录、自有网站（官网和问答站），以及中文或英文工作台界面。下面的真实运行数据来自国内版。</p>
+  </section>
+
+  <section class="stack" aria-labelledby="screens">
+    <div class="col stack">
+      <h2 id="screens"><span lang="en">Inside the workbench</span><span lang="zh">工作台截图</span></h2>
+      <p class="muted" lang="en">Screens from the Chinese edition, captured on a sandboxed copy of the deployment data with organisation names replaced (“示例品牌” is the company, “竞品” are competitors).</p>
+      <p class="muted" lang="zh">以下为中文版界面，截自运行数据的沙箱副本；机构名称已替换（“示例品牌”为本公司，“竞品”为竞争对手）。</p>
+    </div>
+    <div class="shots">
+      <figure class="shot">
+        <div class="frame"><div class="bar3" aria-hidden="true"><i></i><i></i><i></i></div><img src="img/visibility.jpg" alt="AI visibility page: mention rate, recommendation rate, share of voice, own-site citations and a brand-versus-competitor table" loading="lazy" width="1800" height="1125"></div>
+        <figcaption><b lang="en">Measure: AI visibility</b><b lang="zh">测量：AI 可见度</b>
+          <span lang="en">One snapshot of 12 questions sent to Gemini with Google Search: mention and recommendation rate, share of voice, citations of the company's own site, change since the last run, and the competitors the answers named.</span>
+          <span lang="zh">一次检测快照：12 个问题发给 Gemini（Google 搜索）。显示提及率、推荐率、声量占比、引用官网次数、与上次相比的变化，以及回答里出现的竞品。</span></figcaption>
+      </figure>
+      <figure class="shot">
+        <div class="frame"><div class="bar3" aria-hidden="true"><i></i><i></i><i></i></div><img src="img/automation.jpg" alt="Autopilot page: pipeline from draft to optimisation, platform versions, locking and scheduling, with a progress board" loading="lazy" width="1800" height="631"></div>
+        <figcaption><b lang="en">Run: autopilot</b><b lang="zh">运行：全自动托管</b>
+          <span lang="en">The autopilot works through the plan one step at a time (draft, optimise, platform versions, lock, schedule) within a daily budget, and holds only the channel that is stuck.</span>
+          <span lang="zh">托管按计划一步一步推进：写母稿、优化、生成各平台稿、锁定、排期，有每日预算上限；某个渠道卡住时只停这个渠道。</span></figcaption>
+      </figure>
+      <figure class="shot">
+        <div class="frame"><div class="bar3" aria-hidden="true"><i></i><i></i><i></i></div><img src="img/records.jpg" alt="Publishing records page: manual-intervention rate by channel, outcome counts and the ledger of 413 records" loading="lazy" width="1800" height="1125"></div>
+        <figcaption><b lang="en">Verify: publishing ledger</b><b lang="zh">核验：发布记录</b>
+          <span lang="en">Every attempt on a real platform is kept, including failures: published, scheduled on the platform, needs manual work, failed. The panel at the top shows how often each main channel still needed a person.</span>
+          <span lang="zh">每一次在真实平台上的发布尝试都保留，包括失败：已发布、平台已定时、需要人工处理、失败。顶部显示各主力渠道还需要人工介入的比例。</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="stack" aria-labelledby="deploy">
+    <div class="col stack">
+      <h2 id="deploy"><span lang="en">From a real deployment</span><span lang="zh">真实运行数据</span></h2>
+      <p class="muted" lang="en">China edition: one project, 19 days, autopilot with review before publication. Figures are counted from the system's own ledgers.</p>
+      <p class="muted" lang="zh">国内版：一个项目，运行 19 天，托管模式加发布前审核。数字来自系统自己的运行记录。</p>
+    </div>
+    <div class="figs">
+      <div class="fig"><b>164</b><span lang="en">content pieces on 10 channels</span><span lang="zh">篇内容，覆盖 10 个渠道</span></div>
+      <div class="fig"><b>1,019</b><span lang="en">model calls, about US$7 in total</span><span lang="zh">次模型调用，总计约 7 美元</span></div>
+      <div class="fig"><b>~3¢</b><span lang="en">generation cost per content piece</span><span lang="zh">每篇内容的生成成本（美分）</span></div>
+      <div class="fig"><b>1,946</b><span lang="en">automated tests, all passing</span><span lang="zh">个自动化测试，全部通过</span></div>
+    </div>
+
+    <div class="col stack">
+      <h3><span lang="en">Share of pieces confirmed live, by channel</span><span lang="zh">各渠道确认上线的比例</span></h3>
+      <div class="chart" role="list">
+        <div class="row" role="listitem"><span>Brand website <span class="route">API</span></span><span class="bar"><i style="width:87%"></i></span><span class="v">27/31</span></div>
+        <div class="row" role="listitem"><span>Baijiahao <span class="route">browser</span></span><span class="bar"><i style="width:69%"></i></span><span class="v">20/29</span></div>
+        <div class="row" role="listitem"><span>Xiaohongshu <span class="route">browser</span></span><span class="bar"><i style="width:31%"></i></span><span class="v">9/29</span></div>
+        <div class="row" role="listitem"><span>Douyin <span class="route">browser</span></span><span class="bar"><i style="width:29%"></i></span><span class="v">7/24</span></div>
+        <div class="row" role="listitem"><span>Answer site <span class="route">Git</span></span><span class="bar"><i style="width:23%"></i></span><span class="v">7/30</span></div>
+      </div>
+      <p class="note" lang="en">The answer site was low because its scheduled build workflow was missing at first; the system now installs it.</p>
+      <p class="note" lang="zh">问答站比例低，是因为一开始缺少定时构建流程；系统现在会自动安装。</p>
+    </div>
+
+    <div class="col stack">
+      <h3><span lang="en">What we learned</span><span lang="zh">几点发现</span></h3>
+      <div class="callout" lang="en"><b>Submitted is not published.</b> When the system looked submitted posts up on the platforms later, 54 of 90 checks did not find them visible. That is why a post counts as published only on platform evidence.</div>
+      <div class="callout" lang="zh"><b>提交了不等于发出去了。</b>事后到平台上逐条核对，90 次核对里有 54 次没有找到帖子或帖子不可见。所以系统只在看到平台证据后，才把一篇内容记为“已发布”。</div>
+      <p lang="en">Drafts most often lacked dates on time-sensitive facts (78% of reviews) and sources for numbers and policies (64%). Instead of asking the writer to “add sources”, the system runs one grounded search per topic and keeps only sources the search actually returned.</p>
+      <p lang="zh">草稿最常缺的是时效信息的日期（78% 的检查）和数字、政策的出处（64%）。系统不会让写手“补个来源”，而是每个选题做一次联网检索，只保留检索真正返回的来源。</p>
+      <p lang="en">For “which provider should I choose” questions, the 51 pages Doubao cited included no public-authority page; most were recommendation listicles on portals and open publishing platforms. This is one reason the system publishes natively to many platforms.</p>
+      <p lang="zh">对“该选哪一家”这类问题，豆包引用的 51 个网页里没有一个来自政府等公共机构，大多是门户网站和开放平台上的推荐榜单文章。这也是系统要在多个平台上原生发布的原因之一。</p>
+    </div>
+  </section>
+
+  <section class="stack" aria-labelledby="platforms">
+    <h2 id="platforms"><span lang="en">Platforms</span><span lang="zh">支持的平台</span></h2>
+    <div class="platforms">
+      <div><h3><span lang="en">China edition</span><span lang="zh">国内版</span></h3>
+        <div class="chips"><span class="chip">WeChat Official Account</span><span class="chip">Baijiahao</span><span class="chip">Douyin</span><span class="chip">Xiaohongshu</span><span class="chip">Zhihu</span><span class="chip">Toutiao</span><span class="chip">Sohu</span><span class="chip">NetEase</span></div></div>
+      <div><h3><span lang="en">Global edition</span><span lang="zh">海外版</span></h3>
+        <div class="chips"><span class="chip">X</span><span class="chip">Facebook Page</span><span class="chip">Instagram</span><span class="chip">Reddit</span><span class="chip">Discord</span></div></div>
+      <div><h3><span lang="en">Owned websites</span><span lang="zh">自有网站</span></h3>
+        <div class="chips"><span class="chip">Brand website (Wix)</span><span class="chip">Answer site (GitHub Pages)</span></div></div>
+      <div><h3><span lang="en">Answer engines measured</span><span lang="zh">检测的 AI 引擎</span></h3>
+        <div class="chips"><span class="chip">Doubao</span><span class="chip">Google Gemini + Search</span><span class="chip">Baidu AI Search</span><span class="chip">Yuanbao, DeepSeek, Kimi (apps)</span></div></div>
+    </div>
+  </section>
+
+  <section class="col stack" aria-labelledby="built">
+    <h2 id="built"><span lang="en">How it is built</span><span lang="zh">技术实现</span></h2>
+    <dl class="stackdl">
+      <dt>STATE</dt><dd lang="en">FastAPI service that owns plans, versions, schedules and ledgers; SQLite store that writes only changed rows.</dd><dd lang="zh">FastAPI 服务统一管理计划、版本、排期和记录；SQLite 存储只写入发生变化的行。</dd>
+      <dt>AGENTS</dt><dd lang="en">CrewAI in a separate process, 23 agent roles; each run uses only the agents its stage needs. Gemini writes all publishable text.</dd><dd lang="zh">CrewAI 在独立进程中运行，共 23 个智能体角色，每次只调用当前阶段需要的几个；所有可发布文字由 Gemini 生成。</dd>
+      <dt>JUDGE</dt><dd lang="en">A small typed judge answers narrow yes/no checks with a confidence score and never writes content.</dd><dd lang="zh">一个小型判定模型只回答“是/否”类检查并给出置信度，从不写内容。</dd>
+      <dt>PUBLISHING</dt><dd lang="en">Official APIs, Git with scheduled builds, and dedicated logged-in browser profiles; pauses on login, CAPTCHA or risk-control pages.</dd><dd lang="zh">官方 API、Git 定时构建、每个平台独立登录的专用浏览器；遇到登录、验证码或风控页面就暂停。</dd>
+      <dt>INTERFACE</dt><dd lang="en">Next.js workbench in Chinese and English editions, with accounts, per-product projects and usage-based billing.</dd><dd lang="zh">Next.js 工作台，分中文版和英文版，支持账号、按产品建项目和按量计费。</dd>
+    </dl>
+  </section>
+
+  <section class="col stack" aria-labelledby="paper">
+    <h2 id="paper"><span lang="en">Research</span><span lang="zh">研究成果</span></h2>
+    <div class="paper">
+      <span class="eyebrow" lang="en">Technical report</span>
+      <span class="eyebrow" lang="zh">技术报告</span>
+      <span class="t">Generative Engine Optimization Beyond the Document: A Deployment Report on a Multi-Agent Content and Publishing System</span>
+      <span class="muted">Lintong Han, Mengran Wang · 2026</span>
+    </div>
+  </section>
+
+  <footer>
+    <span lang="en">The deployment data come from one anonymised project; organisation names are withheld.</span>
+    <span lang="zh">运行数据来自一个匿名项目，不公开具体机构名称。</span>
+  </footer>
+</div>
+
+<script>
+const STAGES = [
+  { en: ["Measure", "Ask answer engines the questions customers ask: Doubao, Google Gemini with Search, Baidu AI Search and consumer apps. Record mentions, recommendations, rank, share of voice and every cited page as a dated snapshot."],
+    zh: ["测量", "用客户真正会问的问题去问 AI：豆包、Google Gemini（联网搜索）、百度 AI 搜索以及多个 App。记录是否提到、是否推荐、排第几、声量占比和每一个被引用的网页，按日期保存快照。"] },
+  { en: ["Find gaps", "Questions where the brand is missing go straight into the next plan's research, with no extra model call, and into reference answers that a person approves before they go online."],
+    zh: ["找缺口", "AI 没提到的问题会直接进入下一轮计划的研究材料（不额外调用模型），同时生成标准答案，由人工审核后再发布。"] },
+  { en: ["Plan", "A topic library with repeat detection. One topic becomes one article for one primary channel. Four planning agents set strategy, question map and publishing order."],
+    zh: ["计划", "选题库自动查重；一个选题对应一篇文章和一个首选渠道。四个计划智能体负责策略、问题地图和发布顺序。"] },
+  { en: ["Draft", "One source-of-truth draft per topic, written from product facts and screened evidence: the answer comes first, facts carry dates and sources, and promotion stays short."],
+    zh: ["写母稿", "每个选题只写一篇母稿，作为唯一事实来源；依据产品资料和筛选过的证据。先给答案，事实带日期和出处，推广内容尽量少。"] },
+  { en: ["Gate", "Before any revision, the draft is checked against six GEO criteria and four rules. A draft that passes is kept as is; only failed items go back for revision; a draft that still fails goes to a person.", true],
+    zh: ["发布门槛", "先检查、再修改：用六项 GEO 标准和四条规则检查母稿。通过就保持原稿；不通过只把未通过的项目发回修改；改两轮仍不过就交给人工。", true] },
+  { en: ["Adapt", "A strategist and writer pair for each platform changes structure, title and tone, never facts. English channels get one translation per topic, reused while the draft is unchanged."],
+    zh: ["多平台改写", "每个平台有一对策略和写作智能体，只改结构、标题和语气，不改事实。英文渠道每个选题只翻译一次，母稿不变就复用。"] },
+  { en: ["Publish", "Official APIs, Git with scheduled builds, or a dedicated logged-in browser per platform. Posting times are spread inside each platform's window."],
+    zh: ["发布", "通过官方 API、Git 定时构建，或每个平台独立登录的专用浏览器发布；发布时间在各平台的时段内随机分布。"] },
+  { en: ["Verify", "A post counts as published only when the platform shows it. Every attempt, including failures, goes into an append-only ledger, and later list checks catch posts that never appeared.", true],
+    zh: ["核验", "只有平台上真的能看到，才记为“已发布”。每一次尝试（包括失败）都写入只增不删的记录表，之后再到平台列表核对，找出没有真正出现的帖子。", true] },
+];
+const POS = [[300,60],[463,104],[530,210],[463,316],[300,360],[137,316],[70,210],[137,104]];
+const NS = "http://www.w3.org/2000/svg";
+const root = document.documentElement;
+let lang = "en", current = 0;
+try { const saved = localStorage.getItem("geo-loop-lang"); if (saved === "zh" || saved === "en") lang = saved; } catch (e) {}
+
+const group = document.getElementById("nodes");
+STAGES.forEach((s, i) => {
+  const g = document.createElementNS(NS, "g");
+  g.setAttribute("class", "node" + (s.en[2] ? " ctrl" : ""));
+  g.setAttribute("tabindex", "0");
+  g.setAttribute("role", "button");
+  const [x, y] = POS[i];
+  const r = document.createElementNS(NS, "rect");
+  r.setAttribute("x", x - 62); r.setAttribute("y", y - 23); r.setAttribute("width", 124); r.setAttribute("height", 46); r.setAttribute("rx", 8);
+  const n = document.createElementNS(NS, "text");
+  n.setAttribute("class", "num"); n.setAttribute("x", x); n.setAttribute("y", y - 6); n.setAttribute("text-anchor", "middle");
+  n.textContent = String(i + 1).padStart(2, "0");
+  const t = document.createElementNS(NS, "text");
+  t.setAttribute("x", x); t.setAttribute("y", y + 12); t.setAttribute("text-anchor", "middle");
+  g.append(r, n, t);
+  g.addEventListener("click", () => select(i));
+  g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(i); } });
+  group.appendChild(g);
+});
+
+function render() {
+  root.setAttribute("data-lang", lang);
+  document.getElementById("btn-en").setAttribute("aria-pressed", String(lang === "en"));
+  document.getElementById("btn-zh").setAttribute("aria-pressed", String(lang === "zh"));
+  [...group.children].forEach((g, i) => {
+    g.classList.toggle("on", i === current);
+    g.querySelector("text:not(.num)").textContent = STAGES[i][lang][0];
+    g.setAttribute("aria-label", STAGES[i][lang][0]);
+    g.setAttribute("aria-pressed", String(i === current));
+  });
+  const s = STAGES[current][lang];
+  document.getElementById("d-step").textContent = (lang === "en" ? "Stage " : "第 ") + (current + 1) + (lang === "en" ? " of 8" : " 步，共 8 步");
+  document.getElementById("d-title").textContent = s[0];
+  document.getElementById("d-text").textContent = s[1];
+}
+function select(i) { current = i; render(); }
+document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => {
+  lang = b.dataset.set;
+  try { localStorage.setItem("geo-loop-lang", lang); } catch (e) {}
+  render();
+}));
+render();
+</script>
+</body>
+</html>

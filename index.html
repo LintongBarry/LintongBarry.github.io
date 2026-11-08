@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lintong Han · Research</title>
+<meta name="description" content="Lintong Han: generative AI that preserves structure, covering image and video restoration, controllable diffusion, medical imaging, and reliable agentic systems.">
+<meta property="og:title" content="Lintong Han · Research">
+<meta property="og:description" content="Generative AI that preserves structure: restoration, controllable diffusion, medical imaging, reliable agents.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<link rel="stylesheet" href="assets/css/style.css">
+<script>try{const t=localStorage.getItem('lh-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="logo" href="#top" aria-label="Home"><span>LH</span></a>
+  <nav aria-label="Sections">
+    <a href="#research">Research</a>
+    <a href="#projects">Projects</a>
+    <a href="#manuscripts">Manuscripts</a>
+  </nav>
+  <button class="theme" id="theme" type="button" aria-label="Toggle dark mode">
+    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path class="sun" d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66 1.41-1.41M4.93 19.07l1.41-1.41m0-11.32L4.93 4.93m14.14 14.14-1.41-1.41M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+  </button>
+</header>
+
+<div class="layout" id="top">
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="side">
+    <div class="avatar">
+      <canvas id="avatar" aria-hidden="true"></canvas>
+      <span class="avatar-cap" aria-hidden="true">noise → structure</span>
+    </div>
+    <h1>Lintong Han</h1>
+    <p class="degree">M.S. Computer Science, Georgia Tech</p>
+    <p class="hashtags">#Applied&nbsp;AI #Generative&nbsp;AI<br>#AI&nbsp;Agents #Startups</p>
+    <div class="side-links">
+      <a class="pill" href="mailto:lhan63@outlook.com">Email</a>
+      <a class="pill" href="https://www.linkedin.com/in/hlt404" target="_blank" rel="noopener">LinkedIn</a>
+      <a class="pill" href="https://github.com/LintongBarry" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <main id="main" class="main">
+
+    <section class="intro">
+      <p>Hi, I'm Lintong Han. I like <span class="hl">application-driven research</span>: problems that come from real products and industry, and methods that hold up once they are deployed. My main line of work is generative AI that preserves structure. I use diffusion priors and conditional control to restore and edit images and video under real constraints, such as low-bitrate transmission, while keeping edges, layout, and identity intact.</p>
+      <p>I am also drawn to the startup side of AI: building reliable multi-agent systems, measuring what actually works in deployment, and turning research into products people use.</p>
+    </section>
+
+    <div class="callout">I am open to Ph.D. positions, research collaborations, and industry or startup projects. Please feel free to contact me <span aria-hidden="true">✦</span></div>
+
+    <!-- ---------- RESEARCH ---------- -->
+    <section id="research" class="block">
+      <h2>Research</h2>
+      <article class="pub res">
+        <div class="pub-text">
+          <h3><span class="key">Edge-Conditioned Generative Restoration</span> of Compressed Video</h3>
+          <div class="tags"><span class="tag">Generative Restoration</span><span class="tag">Video Diffusion</span><span class="tag">ControlNet Adapter</span><span class="tag">Low-bitrate Transmission</span></div>
+          <p class="desc">Can a small side stream of structure help a generative model restore heavily compressed video? The sender transmits a compressed 64×64 video together with a separately coded edge stream extracted from the high-resolution source. At the receiver, a trainable Transformer-ControlNet adapter steers a frozen video diffusion transformer through zero-initialized residuals to restore 512×512 video (8×).</p>
+          <p class="desc">The adapter scale acts as a control knob between pixel fidelity and perceptual quality, and the edge condition improves temporal stability over the unconditioned backbone.</p>
+          <div class="links"><a class="pill sm" href="research/video-restoration/">Research page →</a></div>
+        </div>
+        <div class="res-media">
+          <figure class="thumb"><img src="assets/img/dove-arch.jpg" alt="Dual-stream codec and frozen diffusion transformer with ControlNet-style adapter" width="1600" height="916" loading="lazy"></figure>
+          <figure class="thumb dark"><img src="assets/img/dove-results-a.jpg" alt="Frames: ground truth, decoded low-resolution input, backbone without condition, with edge condition" width="1800" height="481" loading="lazy"><figcaption>Ground truth · decoded input · no condition · edge condition</figcaption></figure>
+        </div>
+      </article>
+
+      <div class="grid res-grid">
+        <article class="proj">
+          <figure class="pthumb"><img src="assets/img/derm.jpg" alt="Traceable dermatology case benchmark and leakage-controlled evaluation pipeline" width="1400" height="697" loading="lazy"></figure>
+          <div class="proj-head"><h3>Dermatology Image–Text Curation and Evidence-Grounded Evaluation</h3></div>
+          <p>Traceable dermatology cases built from the literature, with image–caption alignment, provenance, and leakage control. On top of them sits an evaluation protocol that tests whether a vision-language model's answer depends on the image it was given.</p>
+          <div class="tags"><span class="tag">Vision-language models</span><span class="tag">Medical data</span><span class="tag">Evaluation protocol</span></div>
+          <div class="links"><a class="pill sm" href="research/dermatology/">Research page →</a></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ---------- PROJECTS ---------- -->
+    <section id="projects" class="block">
+      <h2>Project</h2>
+      <div class="filters" role="group" aria-label="Filter projects" data-filter="projs">
+        <button type="button" class="chip on" data-tag="all">All</button>
+        <button type="button" class="chip" data-tag="agents">AI Agents</button>
+        <button type="button" class="chip" data-tag="medical">Medical Imaging</button>
+        <button type="button" class="chip" data-tag="multimodal">Multimodal</button>
+        <button type="button" class="chip" data-tag="video">Generative Video</button>
+        <button type="button" class="chip" data-tag="llm">LLM &amp; RAG</button>
+        <button type="button" class="chip" data-tag="edge">On-device Vision</button>
+      </div>
+
+      <div class="grid" id="projs">
+        <article class="proj" data-tags="agents llm">
+          <figure class="pthumb"><img src="assets/img/geo-arch.jpg" alt="" width="1600" height="905" loading="lazy"></figure>
+          <div class="proj-head"><h3>GEO-Loop</h3><a class="pill sm" href="projects/geo-loop/">Project page</a></div>
+          <p>A contract-driven multi-agent system that plans, drafts, gates, adapts, and publishes content, then measures whether AI answer engines mention it. Typed handoffs and versioned contracts ensure a failed run never overwrites a validated output.</p>
+          <div class="eds"><div class="ed-mini"><b>China edition</b><span>WeChat, Xiaohongshu, Douyin, Zhihu, Baijiahao and more · measured on Doubao</span></div><div class="ed-mini"><b>Global edition</b><span>X, Facebook, Instagram, Reddit, Discord via official APIs · measured on Gemini</span></div></div>
+          <p class="with">With Mengran Wang. 23 agent roles, 1,946 automated tests.</p>
+          <div class="tags"><span class="tag">AI Agents</span><span class="tag">LLM</span><span class="tag">China &amp; Global</span><span class="tag">Startup</span></div>
+        </article>
+
+        <article class="proj" data-tags="medical video">
+          <figure class="pthumb"><img src="assets/img/surgical.jpg" alt="" width="1100" height="562" loading="lazy"></figure>
+          <div class="proj-head"><h3>Surgical Tool Classification &amp; Localization</h3></div>
+          <p>Weakly supervised 3D U-Net and ResNet pipelines that classify and localize tools in sparsely annotated endoscopic video, where labels list the tools in a clip but not where they are.</p>
+          <div class="tags"><span class="tag">Medical Imaging</span><span class="tag">Weak Supervision</span><span class="tag">Video</span></div>
+        </article>
+
+        <article class="proj" data-tags="video agents multimodal">
+          <figure class="pthumb"><img src="assets/img/goldenera.jpg" alt="" width="1200" height="411" loading="lazy"></figure>
+          <div class="proj-head"><h3>“Golden Era” Generative Video</h3></div>
+          <p>A multi-agent text-to-video system for shot composition, camera motion, and cross-shot character consistency. I implemented visual-style prompting and Swapping Self-Attention for local feature transfer, and helped build a human-rated quality dataset.</p>
+          <div class="tags"><span class="tag">Generative Video</span><span class="tag">AI Agents</span><span class="tag">Multimodal</span></div>
+        </article>
+
+        <article class="proj" data-tags="edge">
+          <figure class="pthumb"><img src="assets/img/eyecod.jpg" alt="" width="1200" height="551" loading="lazy"></figure>
+          <div class="proj-head"><h3>EyeCoD: Gaze-Driven Segmentation</h3></div>
+          <p>Compact vision models for on-device eye tracking. I chose MobileSAM for its accuracy–size trade-off and designed dynamic activation gating for Neural Prompt Search adapters, which stabilizes mask updates and cuts latency.</p>
+          <div class="tags"><span class="tag">On-device Vision</span><span class="tag">Segmentation</span></div>
+        </article>
+
+        <article class="proj" data-tags="llm">
+          <figure class="pthumb"><img src="assets/img/rag.jpg" alt="" width="1400" height="860" loading="lazy"></figure>
+          <div class="proj-head"><h3>Enterprise Scientific Assistant</h3></div>
+          <p>A privately deployed LLM/RAG platform for semantic search and document automation over long institutional documents. It includes a QA set for prompt and LoRA experiments and a user-feedback loop after deployment.</p>
+          <div class="tags"><span class="tag">LLM &amp; RAG</span><span class="tag">Deployment</span></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ---------- MANUSCRIPTS ---------- -->
+    <section id="manuscripts" class="block">
+      <h2>Manuscripts</h2>
+      <p class="sub">† denotes the corresponding author</p>
+      <div class="filters" role="group" aria-label="Filter manuscripts" data-filter="pubs">
+        <button type="button" class="chip on" data-tag="all">All</button>
+        <button type="button" class="chip" data-tag="control">Controllable Generation</button>
+        <button type="button" class="chip" data-tag="diffusion">Diffusion Models</button>
+        <button type="button" class="chip" data-tag="affective">Affective Computing</button>
+        <button type="button" class="chip" data-tag="iqa">Image Quality Assessment</button>
+        <button type="button" class="chip" data-tag="agents">AI Agents</button>
+      </div>
+
+      <div class="list" id="pubs">
+
+        <article class="pub" data-tags="control diffusion">
+          <div class="pub-text">
+            <h3><span class="key">StyleCoD:</span> Training-Free, Region-Decoupled Style Re-rendering of Portraits with Face-Priority Identity Preservation</h3>
+            <p class="authors"><b>Lintong Han</b>, Yushen Wei, Lifang Zhou†</p>
+            <div class="tags"><span class="tag strong">First author</span><span class="tag">Controllable Generation</span><span class="tag">SDXL</span><span class="tag">Identity Preservation</span></div>
+            <p class="desc">Identity, layout, and semantic change are assigned to different regions and stages. On a 120-image public benchmark, ArcFace identity rises from 0.06 (img2img) to 0.53 while the scene layout is kept.</p>
+            <div class="links"><a class="pill sm" href="research/stylecod/">Project page →</a></div>
+          </div>
+          <figure class="thumb"><img src="assets/img/stylecod-stages.jpg" alt="StyleCoD intermediate results from input to merged output" width="1800" height="551" loading="lazy"><figcaption>Photos: Open Images, CC BY 2.0 (D. Eltjes; Canadian Film Centre)</figcaption></figure>
+        </article>
+
+        <article class="pub" data-tags="affective">
+          <div class="pub-text">
+            <h3><span class="key">Label Distribution Learning</span> for Facial Expression Recognition Based on Multi-Granularity Perception</h3>
+            <p class="authors">Lifang Zhou†, Pengjun Xiang, Haoyu Wang, Weisheng Li, <b>Lintong Han</b>, Jun Hu</p>
+            <div class="tags"><span class="tag">Affective Computing</span><span class="tag">Label Distribution Learning</span><span class="tag">Frequency Features</span></div>
+            <p class="desc">Progressive multi-granularity training and a frequency-aware global perception module build emotion distributions that handle ambiguous expressions. Evaluated on RAF-DB, FERPlus, AffectNet, and Aff-Wild2.</p>
+          </div>
+          <figure class="thumb"><img src="assets/img/ldl-framework.jpg" alt="GPLDL framework: multi-stage backbone, conv blocks, classifiers, FGPM, and distribution loss" width="1680" height="330" loading="lazy"></figure>
+        </article>
+
+        <article class="pub" data-tags="iqa diffusion">
+          <div class="pub-text">
+            <h3><span class="key">A Multi-Branch Style Assessment</span> for Science Fiction Image Generation</h3>
+            <p class="authors"><b>Lintong Han</b> and collaborators</p>
+            <div class="tags"><span class="tag">Image Quality Assessment</span><span class="tag">AIGC</span><span class="tag">Dataset</span></div>
+            <p class="desc">Sci-Fi-4K: 4,000 generated images in four sci-fi styles, and a regression framework that fuses textual and visual features into a Sci-Fi Score aligned with human judgments.</p>
+          </div>
+          <figure class="thumb dark"><img src="assets/img/scifi-samples.jpg" alt="Sample images from Sci-Fi-4K across biomechanical, interstellar, cyberpunk, and virtual-reality styles" width="1163" height="177" loading="lazy"></figure>
+        </article>
+
+        <article class="pub" data-tags="agents">
+          <div class="pub-text">
+            <h3><span class="key">Generative Engine Optimization Beyond the Document:</span> A Deployment Report on a Multi-Agent Content and Publishing System</h3>
+            <p class="authors"><b>Lintong Han</b>, Mengran Wang</p>
+            <div class="tags"><span class="tag strong">First author</span><span class="tag">AI Agents</span><span class="tag">GEO</span><span class="tag">Deployment Study</span></div>
+            <p class="desc">An eight-stage loop from measurement to verification, run for 19 days: 164 pieces on 10 channels for about US$7 in model calls.</p>
+            <div class="links"><a class="pill sm" href="projects/geo-loop/">Project page</a></div>
+          </div>
+          <figure class="thumb"><img src="assets/img/geo-arch.jpg" alt="GEO-Optimal system architecture" width="1600" height="905" loading="lazy"></figure>
+        </article>
+
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>© Lintong Han</span>
+      <span>Figures are from the author's own work. Benchmark photos are from Open Images (CC BY 2.0).</span>
+    </footer>
+  </main>
+</div>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>

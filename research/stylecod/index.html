@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StyleCoD · Lintong Han</title>
+<meta name="description" content="StyleCoD: training-free, region-decoupled style re-rendering of portraits with face-priority identity preservation.">
+<link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<link rel="stylesheet" href="../../assets/css/page.css">
+<script>try{const t=localStorage.getItem('lh-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="logo" href="../../" aria-label="Lintong Han, home"><span>LH</span></a>
+  <nav aria-label="Site"><a href="../../#research">Research</a><a href="../../#projects">Projects</a><a href="../../#manuscripts">Manuscripts</a></nav>
+  <button class="theme" id="theme" type="button" aria-label="Toggle dark mode"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path class="sun" d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66 1.41-1.41M4.93 19.07l1.41-1.41m0-11.32L4.93 4.93m14.14 14.14-1.41-1.41M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+</header>
+
+<div class="page">
+  <nav class="toc" aria-label="On this page">
+    <a class="back" href="../../#manuscripts">← All work</a>
+    <a href="#problem">Problem</a>
+    <a href="#method">Method</a>
+    <a href="#benchmark">Benchmark</a>
+    <a href="#results">Results</a>
+    <a href="#tradeoff">Trade-off</a>
+    <a href="#limits">Limitations</a>
+    <a href="#role">My role</a>
+  </nav>
+
+  <article class="article">
+    <header class="head">
+      <p class="kick">Research · Controllable generation</p>
+      <h1><span class="key">StyleCoD:</span> Region-Decoupled Style Re-rendering of Portraits with Face-Priority Identity</h1>
+      <p class="lead">How do you restyle a real portrait strongly, so that clothing and scene really change, while the person stays recognizable and the pose and layout stay put? StyleCoD gives each of these goals its own region and its own stage in a training-free SDXL pipeline.</p>
+      <p class="byline"><b>Lintong Han</b>, Yushen Wei, Lifang Zhou† &nbsp;·&nbsp; † corresponding author</p>
+      <div class="tags"><span class="tag">SDXL</span><span class="tag">Training-free</span><span class="tag">Identity preservation</span><span class="tag">Region-aware editing</span><span class="tag">ControlNet</span><span class="tag">InstantID</span></div>
+    </header>
+
+    <div class="stats" role="list">
+      <div role="listitem"><b>0.06 → 0.53</b><span>ArcFace identity, img2img → StyleCoD</span></div>
+      <div role="listitem"><b>0.73</b><span>identity on large faces</span></div>
+      <div role="listitem"><b>0.69</b><span>background SSIM (InstantID: 0.44)</span></div>
+      <div role="listitem"><b>120</b><span>image public benchmark, rules fixed in advance</span></div>
+    </div>
+
+    <section class="sec" id="problem">
+      <h2>Problem</h2>
+      <p>Stacking components that each work in isolation, such as an identity adapter, pose/depth/edge ControlNets, and a style LoRA, does not reliably work in one image-to-image pass. We observed three conflicts:</p>
+      <div class="three">
+        <div class="card"><span class="num">01 · CONSTRAINT</span><b>Identity vs. style</b><p>Strong style guidance overwrites facial detail. Strong identity conditioning suppresses the requested change.</p></div>
+        <div class="card"><span class="num">02 · REGION</span><b>Structure vs. semantics</b><p>Pose, depth, and edge maps keep the layout but also pin clothing and background to the source, so the result is only re-textured.</p></div>
+        <div class="card"><span class="num">03 · MERGE</span><b>Contamination</b><p>When regions are generated separately, they leak into each other at recombination. For example, a background pass can bleed into the face.</p></div>
+      </div>
+    </section>
+
+    <section class="sec" id="method">
+      <h2>Method</h2>
+      <p>Instead of tuning one weighted sum of constraints, StyleCoD separates them in <b>space</b> (which region) and <b>time</b> (which denoising steps). Nothing is trained or fine-tuned.</p>
+      <figure class="fig"><img src="../../assets/img/stylecod-pipeline.jpg" alt="Pipeline: priors, face-priority global pass, body and background branches, contamination-aware merge" width="1615" height="400"><figcaption>S1–S2 extract the identity embedding, four region masks, and weak structural maps. S3 is a face-priority global pass. S4 re-renders the body and the background. S5 merges with explicit write permissions.</figcaption></figure>
+      <h3>Late-stage face-latent anchor (the key mechanism)</h3>
+      <p>For the first steps the face is free to change lighting and texture. During the last 11 of 18 executed steps, the latent is pulled back toward the source latent inside a feathered face box, with a strength that ramps up linearly.</p>
+      <div class="eq">z_t ← z_t ⊙ (1 − λ_t·L) + z_0 ⊙ (λ_t·L)
+L = 1 inside the face box, 0.55 on its feathered border
+λ_t rises from 0 to 0.22 once denoising progress τ ≥ 0.72</div>
+      <h3>Region-scoped branches and write permissions</h3>
+      <p>The body branch updates only the non-facial person mask. The background branch re-renders the full image with global context, so new structures have consistent lighting and perspective. Its output is then admitted only outside the person and the face halo:</p>
+      <div class="eq">W_body = M̃_body ⊙ M_body ⊙ (1 − M_halo)
+W_bg   = M_bg ⊙ [1 − clip(0.78·M_body + 0.60·M_halo)]
+output = (I_g ⊙ (1 − W_body) + I_body ⊙ W_body) ⊙ (1 − W_bg) + I_bg ⊙ W_bg</div>
+      <figure class="fig"><img src="../../assets/img/stylecod-stages.jpg" alt="Intermediate outputs for two benchmark images" width="1800" height="551"><figcaption>Input → region priors → global pass → body branch → background branch → merged output. Photos via Open Images, CC BY 2.0, by Dominic Eltjes (top) and the Canadian Film Centre (bottom).</figcaption></figure>
+    </section>
+
+    <section class="sec" id="benchmark">
+      <h2>Benchmark</h2>
+      <p>The method was tuned on six development photos, so it is evaluated on a separate, license-documented benchmark: <b>120 single-person photographs from the Open Images test split</b> (CC BY 2.0). Images are stratified by face size into 40 small (&lt;2% of the canvas), 40 medium, and 40 large (≥6%), half <i>Man</i> and half <i>Woman</i>. All selection rules were fixed before any model was run.</p>
+      <p>Comparisons are paired, with 95% bootstrap confidence intervals and Wilcoxon tests. They include controlled ablations and three references: plain img2img, pasting the source face back (with partial blends), and the official InstantID pipeline. Key conclusions were re-run with three seeds.</p>
+    </section>
+
+    <section class="sec" id="results">
+      <h2>Results</h2>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Method (120 images)</th><th>ID ↑</th><th>Face-SSIM</th><th>BG-SSIM</th><th>ΔCLIP-T ↑</th><th>Face-ΔCLIP-T ↑</th></tr></thead>
+          <tbody>
+            <tr><td>A2 · SDXL img2img</td><td>0.059</td><td>0.507</td><td>0.726</td><td>0.062</td><td>0.057</td></tr>
+            <tr><td>C · Coupled stack</td><td>0.110</td><td>0.564</td><td>0.760</td><td>0.042</td><td>0.043</td></tr>
+            <tr><td>G · C + anchor</td><td>0.520</td><td>0.734</td><td>0.764</td><td>0.032</td><td>0.021</td></tr>
+            <tr><td>E · without region branches</td><td>0.527</td><td>0.735</td><td>0.764</td><td>0.032</td><td>0.021</td></tr>
+            <tr class="ours"><td>D · StyleCoD</td><td>0.529</td><td>0.734</td><td>0.686</td><td>0.054</td><td>0.025</td></tr>
+            <tr><td>P · Paste-back on A2</td><td class="best">0.950</td><td>0.917</td><td>0.735</td><td>0.035</td><td>0.001</td></tr>
+            <tr><td>X · InstantID (official)</td><td>0.580</td><td>0.327</td><td>0.443</td><td class="best">0.088</td><td>0.056</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li><b>The anchor accounts for the identity gain.</b> Adding only the anchor (C → G) raises identity by +0.409 (95% CI [0.367, 0.451]), higher on 113 of 120 images.</li>
+        <li><b>The region branches add style at a cost.</b> D vs. E gives +0.023 whole-image style gain (reproduced under three seeds) but −0.078 background SSIM, because the background is re-rendered rather than inherited.</li>
+        <li><b>Face size dominates.</b> Identity is 0.726 / 0.593 / 0.269 for large / medium / small faces (Spearman ρ = 0.81 with face area). The same ordering holds for InstantID.</li>
+      </ul>
+      <figure class="fig"><img src="media/qual.jpg" alt="Six benchmark rows comparing input, img2img, paste-back, InstantID, without dual-route, and StyleCoD" width="1800" height="1555" loading="lazy"><figcaption>Benchmark examples with the same seed and prompts. Rows were chosen by rule before the outputs were viewed. Photos via Open Images (CC BY 2.0), by (1) Jarrett Campbell, (2) Ninian Reid, (3) Maina Kiai, (4) Deutsche Welle, (5) U.S. Army Corps of Engineers, and (6) Diki Irawan.</figcaption></figure>
+    </section>
+
+    <section class="sec" id="tradeoff">
+      <h2>Trade-off: identity vs. face stylization</h2>
+      <p>The plot below gives the clearest summary. Blending the source face into the img2img result at increasing weight traces a curve. <b>StyleCoD lies on that curve</b>, between the 50% and 75% blends, rather than above it. Where it differs is <i>how</i> the face is produced (generated with the scene rather than composited) and how much of the scene is re-rendered. InstantID sits above the curve, but only because it regenerates the whole scene.</p>
+      <div class="chart">
+        <svg id="tchart" viewBox="0 0 600 340" role="img" aria-label="Scatter plot of identity similarity versus face stylization"></svg>
+        <div class="legend"><span><i style="border:1.6px solid var(--muted);background:var(--surface)"></i>Paste-back blends P<sub>α</sub></span><span><i style="background:var(--navy);opacity:.55"></i>Controlled variants</span><span><i style="background:var(--teal)"></i>StyleCoD (D)</span><span><i style="background:#d9822b"></i>InstantID (X)</span></div>
+      </div>
+    </section>
+
+    <section class="sec" id="limits">
+      <h2>Limitations</h2>
+      <ul>
+        <li>One style (one LoRA and one prompt set), one backbone, and single-person photographs only.</li>
+        <li>The identity metric uses the same ArcFace family that produces the conditioning embedding. An independent recognizer and a human study would strengthen the conclusions.</li>
+        <li>With these automatic metrics, StyleCoD does not beat a 50–75% paste-back blend on the identity–face-stylization balance. Whether it looks more natural is a perceptual question that a blind user study should answer.</li>
+        <li>Small faces remain hard (ID 0.27). Border streaks come from edge-replicated canvas padding.</li>
+      </ul>
+    </section>
+
+    <section class="sec" id="role">
+      <h2>My role</h2>
+      <p>First author. I conceived the region-and-stage decoupling, implemented the pipeline, designed the benchmark protocol and statistics, ran the experiments, made the figures, and wrote the paper.</p>
+      <div class="role"><span class="tag strong">Conceptualization</span><span class="tag strong">Methodology</span><span class="tag strong">Software</span><span class="tag strong">Investigation</span><span class="tag strong">Formal analysis</span><span class="tag strong">Visualization</span><span class="tag strong">Writing</span></div>
+    </section>
+
+    <div class="next">
+      <a class="pill" href="../../">← Home</a>
+      <a class="pill" href="../video-restoration/">Next: Edge-conditioned video restoration →</a>
+    </div>
+  </article>
+</div>
+
+<script>
+(() => {
+  const svg = document.getElementById('tchart'); if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const L = 52, R = 584, T = 14, B = 298, X1 = 0.06;
+  const x = v => L + v / X1 * (R - L), y = v => B - v * (B - T);
+  const el = (n, a, txt) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; };
+  for (let i = 0; i <= 5; i++) { const v = i / 5; el('line', { x1: L, x2: R, y1: y(v), y2: y(v), class: 'ax' }); el('text', { x: L - 8, y: y(v) + 3, 'text-anchor': 'end', class: 'tick' }, v.toFixed(1)); }
+  for (let i = 0; i <= 6; i++) { const v = i / 100; el('text', { x: x(v), y: B + 16, 'text-anchor': 'middle', class: 'tick' }, v.toFixed(2)); }
+  el('text', { x: (L + R) / 2, y: B + 36, 'text-anchor': 'middle', class: 'axt' }, 'Face stylization (Face-ΔCLIP-T) →');
+  el('text', { x: 14, y: (T + B) / 2, 'text-anchor': 'middle', class: 'axt', transform: `rotate(-90 14 ${(T + B) / 2})` }, 'Identity (ArcFace) →');
+  const P = [[0.001, 0.950, 'P (α=1)'], [0.009, 0.820, '0.75'], [0.030, 0.469, '0.5'], [0.049, 0.153, '0.25'], [0.057, 0.059, 'A2 (α=0)']];
+  el('path', { d: 'M' + P.map(p => x(p[0]) + ',' + y(p[1])).join(' L'), class: 'curve' });
+  P.forEach(p => { el('circle', { cx: x(p[0]), cy: y(p[1]), r: 5, class: 'ptP' }); el('text', { x: x(p[0]) + 9, y: y(p[1]) - 7, class: 'tick' }, p[2]); });
+  [[0.043, 0.110, 'C'], [0.049, 0.107, 'F'], [0.021, 0.520, 'G, E']].forEach(p => { el('rect', { x: x(p[0]) - 5, y: y(p[1]) - 5, width: 10, height: 10, rx: 2, class: 'ptC' }); el('text', { x: x(p[0]) - 9, y: y(p[1]) + 4, 'text-anchor': 'end', class: 'lbl' }, p[2]); });
+  el('path', { d: `M${x(0.056)},${y(0.580) - 7} l7,12 h-14 z`, class: 'ptX' }); el('text', { x: x(0.056) - 10, y: y(0.58) + 4, 'text-anchor': 'end', class: 'lbl' }, 'X InstantID');
+  el('circle', { cx: x(0.025), cy: y(0.529), r: 7, class: 'ptD' }); el('text', { x: x(0.025) + 11, y: y(0.529) - 9, class: 'lbl' }, 'D StyleCoD');
+})();
+</script>
+<script src="../../assets/js/page.js" defer></script>
+</body>
+</html>

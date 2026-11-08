@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dermatology Evidence-Grounded Evaluation · Lintong Han</title>
+<meta name="description" content="Dermatology image–text data curation and an evidence-grounded evaluation protocol for medical vision-language models.">
+<link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<link rel="stylesheet" href="../../assets/css/page.css">
+<style>.tbl td:nth-child(2), .tbl th:nth-child(2) { text-align: left; }</style>
+<script>try{const t=localStorage.getItem('lh-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="logo" href="../../" aria-label="Lintong Han, home"><span>LH</span></a>
+  <nav aria-label="Site"><a href="../../#research">Research</a><a href="../../#projects">Projects</a><a href="../../#manuscripts">Manuscripts</a></nav>
+  <button class="theme" id="theme" type="button" aria-label="Toggle dark mode"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path class="sun" d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66 1.41-1.41M4.93 19.07l1.41-1.41m0-11.32L4.93 4.93m14.14 14.14-1.41-1.41M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+</header>
+
+<div class="page">
+  <nav class="toc" aria-label="On this page">
+    <a class="back" href="../../#research">← All work</a>
+    <a href="#problem">Problem</a>
+    <a href="#data">Data curation</a>
+    <a href="#workflow">Workflow</a>
+    <a href="#design">Evaluation design</a>
+    <a href="#built">What is built</a>
+    <a href="#role">Contribution</a>
+  </nav>
+
+  <article class="article">
+    <header class="head">
+      <p class="kick">Research · Medical multimodal AI</p>
+      <h1><span class="key">Dermatology Image–Text Curation</span> and Evidence-Grounded Evaluation</h1>
+      <p class="lead">Medical vision-language models can produce a fluent diagnosis without really looking at the image. This project builds traceable dermatology cases from the literature and designs an evaluation that tests whether an answer is supported by the evidence actually supplied.</p>
+      <div class="tags"><span class="tag">Vision-language models</span><span class="tag">Dermatology</span><span class="tag">Data provenance</span><span class="tag">Leakage control</span><span class="tag">Evaluation protocol</span></div>
+    </header>
+
+    <section class="sec" id="problem">
+      <h2>Problem</h2>
+      <p>A case taken from a published report is not immediately usable for evaluating a model:</p>
+      <div class="three">
+        <div class="card"><span class="num">01</span><b>Mixed figures</b><p>One figure can contain several panels or modalities: clinical photograph, dermoscopy, histopathology.</p></div>
+        <div class="card"><span class="num">02</span><b>Leaky captions</b><p>The caption often names the diagnosis. The reference interpretation may also depend on examinations the model never sees.</p></div>
+        <div class="card"><span class="num">03</span><b>Answers without looking</b><p>A model can reproduce a plausible description from the history or from retrieved examples without inspecting the current image.</p></div>
+      </div>
+    </section>
+
+    <section class="sec" id="data">
+      <h2>Data curation</h2>
+      <p>The core data work collects dermatology cases from biomedical publications, links them through PubMed and PMCID identifiers, matches figures and panels to their captions, and keeps annotation and quality-control records. Each usable case keeps:</p>
+      <ul>
+        <li>patient grouping, source article, figure or panel, and image type;</li>
+        <li>clinical history, reference interpretation, and where the evidence is located;</li>
+        <li>a permission record for reuse.</li>
+      </ul>
+      <p class="callout-note"><b>Model-visible vs. reference-only.</b> A diagnostic caption can support scoring while staying hidden from inference. All images from one patient or article stay in one partition, so near-duplicates cannot leak between the evaluation sets.</p>
+    </section>
+
+    <section class="sec" id="workflow">
+      <h2>Workflow</h2>
+      <p>The workflow keeps current patient evidence separate from historical examples:</p>
+      <ol>
+        <li>The <b>current case</b> (image and clinical history) is the only evidence about this patient.</li>
+        <li>A <b>static memory</b> holds verified records from a disjoint set of cases, retrieved by text similarity. Its score is a retrieval signal, not a probability that an answer is right.</li>
+        <li>The model answers with its <b>observations, evidence IDs, and what is missing</b>.</li>
+        <li>An optional <b>evidence audit</b> checks the answer against the image, history, and retrieved cases for unsupported observations and missing evidence.</li>
+      </ol>
+      <p>Programmatic checks validate structure and provenance, but they do not establish clinical correctness. Memory stays verified and static, so model-generated interpretations are never automatically promoted to accepted facts.</p>
+    </section>
+
+    <section class="sec" id="design">
+      <h2>Evaluation design</h2>
+      <h3>Does the answer depend on the image?</h3>
+      <p>For each question, the history and question stay fixed while the visual evidence changes: the intact image, no image, the lesion occluded, and an equal-area background region occluded as a control. Answerability is reviewed separately for every probe. A partially masked image does not automatically require the model to abstain.</p>
+      <h3>Compared methods</h3>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Method</th><th>Added component</th><th>Model calls</th></tr></thead>
+          <tbody>
+            <tr><td>M0</td><td>Direct structured answer</td><td>1</td></tr>
+            <tr><td>M1</td><td>Evidence-first instruction</td><td>1</td></tr>
+            <tr><td>M2</td><td>M1 + verified case retrieval</td><td>1</td></tr>
+            <tr><td>M2-R</td><td>M2 + generic self-review (budget control)</td><td>2</td></tr>
+            <tr><td>M3</td><td>M2 + evidence-audit review</td><td>2</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>M2-R gives M3's extra call to a generic self-review, so any gain from the audit is not just a gain from spending more compute. Metrics: task accuracy, answer coverage, accuracy given an answer, unsupported answers on unanswerable probes, over-refusal on answerable probes, and independently reviewed unsupported visual claims. Missing outputs stay in the denominator, and the system's own verifier is never the only evaluator.</p>
+    </section>
+
+    <section class="sec" id="built">
+      <h2>What is built</h2>
+      <ul>
+        <li>Offline prompt preparation, source-linked memory retrieval, and a connector for a configured image-capable model endpoint, with raw outputs and usage records preserved.</li>
+        <li>A scorer that checks partition overlap, imported memory IDs, duplicate predictions, response completeness, and reviewed answerability labels.</li>
+        <li>Software tests that confirm four properties: reference answers never enter prompts, memory/test source overlap is rejected, an always-refuse strategy cannot reach perfect accuracy, and missing outputs are counted.</li>
+      </ul>
+      <p class="callout-note">These are software checks, not clinical results. No diagnostic accuracy, hallucination reduction, or memory benefit is claimed until the controlled study runs on real, reviewed cases.</p>
+    </section>
+
+    <section class="sec" id="role">
+      <h2>Contribution</h2>
+      <p>My contribution is the data work: case collection, image–caption alignment, annotation organization, and provenance tracking. The evaluation design and the retrieval and audit scaffold extend that work and were developed with AI assistance.</p>
+    </section>
+
+    <div class="next">
+      <a class="pill" href="../video-restoration/">← Video restoration</a>
+      <a class="pill" href="../../">Home →</a>
+    </div>
+  </article>
+</div>
+<script src="../../assets/js/page.js" defer></script>
+</body>
+</html>

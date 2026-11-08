@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Edge-Conditioned Video Restoration · Lintong Han</title>
+<meta name="description" content="Edge-conditioned generative restoration of compressed video: a ControlNet-style adapter on a frozen video diffusion transformer.">
+<link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<link rel="stylesheet" href="../../assets/css/page.css">
+<style>
+  .flow { background: var(--surface); border: .5px solid var(--line); border-radius: 16px; padding: 14px; box-shadow: var(--shadow); }
+  .flow svg { width: 100%; height: auto; display: block; }
+  .flow .box { fill: var(--surface-2); stroke: var(--line); stroke-width: 1.2; }
+  .flow .frz { fill: var(--surface-2); stroke: var(--muted); stroke-dasharray: 4 3; }
+  .flow .trn { fill: var(--navy-soft); stroke: var(--navy); stroke-width: 1.6; }
+  .flow .bit { fill: none; stroke: var(--teal); stroke-width: 1.6; }
+  .flow text { font: 600 11px var(--head); fill: var(--ink); }
+  .flow .s { font: 500 9.5px var(--head); fill: var(--muted); }
+  .flow .lane { font: 700 10px var(--head); fill: var(--teal); letter-spacing: .08em; }
+  .flow .ar { stroke: var(--muted); stroke-width: 1.4; fill: none; marker-end: url(#ah); }
+  .flow .arT { stroke: var(--teal); stroke-width: 1.8; fill: none; marker-end: url(#ahT); }
+  .flow .div { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
+</style>
+<script>try{const t=localStorage.getItem('lh-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body>
+<header class="topbar">
+  <a class="logo" href="../../" aria-label="Lintong Han, home"><span>LH</span></a>
+  <nav aria-label="Site"><a href="../../#research">Research</a><a href="../../#projects">Projects</a><a href="../../#manuscripts">Manuscripts</a></nav>
+  <button class="theme" id="theme" type="button" aria-label="Toggle dark mode"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path class="sun" d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66 1.41-1.41M4.93 19.07l1.41-1.41m0-11.32L4.93 4.93m14.14 14.14-1.41-1.41M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+</header>
+
+<div class="page">
+  <nav class="toc" aria-label="On this page">
+    <a class="back" href="../../#research">← All work</a>
+    <a href="#problem">Problem</a>
+    <a href="#system">System</a>
+    <a href="#adapter">Adapter</a>
+    <a href="#results">Results</a>
+    <a href="#scale">Scale sweep</a>
+    <a href="#open">Open questions</a>
+    <a href="#role">My role</a>
+  </nav>
+
+  <article class="article">
+    <header class="head">
+      <p class="kick">Research · Generative restoration</p>
+      <h1><span class="key">Edge-Conditioned Generative Restoration</span> of Compressed Video</h1>
+      <p class="lead">Can a small, separately coded stream of structure help a video diffusion model restore heavily compressed video, without sending the high-resolution frames? We send a 64×64 video plus an edge stream and restore 512×512 video at the receiver.</p>
+      <div class="tags"><span class="tag">Video diffusion</span><span class="tag">ControlNet</span><span class="tag">8× super-resolution</span><span class="tag">Neural video coding</span><span class="tag">Temporal consistency</span></div>
+    </header>
+
+    <div class="stats" role="list">
+      <div role="listitem"><b>8×</b><span>spatial upscaling, 64 → 512</span></div>
+      <div role="listitem"><b>Frozen</b><span>backbone and codecs; only the adapter trains</span></div>
+      <div role="listitem"><b>Zero-init</b><span>training starts exactly at the backbone</span></div>
+      <div role="listitem"><b>1 knob</b><span>adapter scale trades fidelity for perception</span></div>
+    </div>
+
+    <section class="sec" id="problem">
+      <h2>Problem</h2>
+      <p>At very low bitrates, the decoded video keeps color, brightness, and coarse content, but object boundaries, lines, and texture are gone. A generative prior can invent detail, yet invented detail is not the same as correct detail. Edges are cheap to transmit and say <i>where</i> structure is. They cannot say what color or texture it has. The task is to balance four things at once: <b>fidelity</b>, <b>perceptual quality</b>, <b>temporal consistency</b>, and <b>bitrate</b>.</p>
+    </section>
+
+    <section class="sec" id="system">
+      <h2>System</h2>
+      <div class="flow">
+        <svg viewBox="0 0 760 250" role="img" aria-label="Sender sends a compressed low-resolution video and a compressed edge stream; receiver uses a frozen video diffusion model with a trainable adapter">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker>
+            <marker id="ahT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--teal)"/></marker>
+          </defs>
+          <text class="lane" x="10" y="18">SENDER</text>
+          <text class="lane" x="430" y="18">RECEIVER</text>
+          <line class="div" x1="400" y1="8" x2="400" y2="242"/>
+          <rect class="box" x="10" y="98" width="86" height="52" rx="10"/><text x="53" y="121" text-anchor="middle">HR video</text><text class="s" x="53" y="137" text-anchor="middle">8 × 512²</text>
+          <rect class="box" x="130" y="40" width="104" height="46" rx="10"/><text x="182" y="60" text-anchor="middle">Downsample</text><text class="s" x="182" y="75" text-anchor="middle">→ 64×64 RGB</text>
+          <rect class="box" x="130" y="162" width="104" height="46" rx="10"/><text x="182" y="182" text-anchor="middle">Canny edges</text><text class="s" x="182" y="197" text-anchor="middle">from HR, 512²</text>
+          <rect class="frz" x="262" y="40" width="112" height="46" rx="10"/><text x="318" y="60" text-anchor="middle">Video codec</text><text class="s" x="318" y="75" text-anchor="middle">frozen neural codec</text>
+          <rect class="frz" x="262" y="162" width="112" height="46" rx="10"/><text x="318" y="182" text-anchor="middle">Edge codec</text><text class="s" x="318" y="197" text-anchor="middle">frozen, small side stream</text>
+          <path class="ar" d="M96 112 C112 112 112 63 128 63"/><path class="ar" d="M96 136 C112 136 112 185 128 185"/>
+          <path class="ar" d="M234 63 H260"/><path class="ar" d="M234 185 H260"/>
+          <path class="arT" d="M374 63 H428"/><path class="arT" d="M374 185 H428"/>
+          <text class="s" x="388" y="56" text-anchor="middle">bits</text><text class="s" x="388" y="178" text-anchor="middle">bits</text>
+          <rect class="frz" x="430" y="40" width="160" height="46" rx="10"/><text x="510" y="58" text-anchor="middle">Frozen video diffusion</text><text class="s" x="510" y="74" text-anchor="middle">3D VAE + 30-block transformer</text>
+          <rect class="trn" x="430" y="150" width="160" height="70" rx="10"/><text x="510" y="172" text-anchor="middle">Trainable adapter</text><text class="s" x="510" y="188" text-anchor="middle">LQ RGB + edges + Sobel</text><text class="s" x="510" y="203" text-anchor="middle">→ 13 zero-init residuals</text>
+          <path class="ar" d="M510 148 V90"/>
+          <path class="ar" d="M440 86 C440 120 455 130 470 148" style="stroke-dasharray:3 3"/>
+          <rect class="box" x="626" y="98" width="124" height="52" rx="10"/><text x="688" y="121" text-anchor="middle">Restored video</text><text class="s" x="688" y="137" text-anchor="middle">8 × 512²</text>
+          <path class="ar" d="M590 63 C610 63 606 112 624 112"/>
+        </svg>
+      </div>
+      <p>The high-resolution source is used only at the sender, to produce the low-resolution video and the edge map. The receiver never sees HR RGB. The decoded low-resolution RGB is reused by both the backbone and the adapter, but it is transmitted only once. The Sobel gradients are computed locally from the decoded edges, so they add no rate.</p>
+      <figure class="fig"><img src="../../assets/img/dove-arch.jpg" alt="Detailed architecture: LR video codec, HR edge sequence codec, edge-assisted VSR with diffusion transformer and ControlNet-transformer" width="1600" height="916" loading="lazy"><figcaption>Detailed architecture: (a) low-resolution video codec, (b) edge-sequence codec, (c) edge-assisted restoration, (d) diffusion transformer with ControlNet-style transformer branch.</figcaption></figure>
+    </section>
+
+    <section class="sec" id="adapter">
+      <h2>Adapter</h2>
+      <p>The adapter is a trainable residual path attached to the frozen model, not a second super-resolution network. A multi-scale 3D convolutional encoder (full, half, and quarter resolution, temporal stride 1) turns the 6-channel condition into tokens on the backbone's grid. Trainable copies of the first 13 transformer blocks process these tokens, and each copy writes back through a <b>zero-initialized</b> projection with a bounded gain:</p>
+      <div class="eq">h_i^ctrl = CopiedBlock_i(h_{i-1}^ctrl + condition_tokens)
+r_i      = ZeroLinear_i(h_i^ctrl)
+g_i      = 1 + tanh(raw_gain_i)          ∈ (0, 2)
+h_i      = FrozenBlock_i(h_{i-1}) + s · g_i · r_i</div>
+      <p>At initialization the model is <b>exactly</b> the unconditioned backbone, so training learns a controlled residual instead of damaging the pretrained prior. The scale <code>s</code> is exposed at inference time, which makes it a knob for the distortion–perception trade-off (see below).</p>
+      <div class="three">
+        <div class="card"><span class="num">DATA</span><b>HQ-VSR, leakage-free</b><p>Training and validation clips are split by source video with zero overlap. UDM10 is never used for training or model selection.</p></div>
+        <div class="card"><span class="num">TRAINING</span><b>Latent objective, progressive depth</b><p>The loss is computed against the HR latent. The number of conditioned blocks grows progressively during training, and validation loss decreases steadily.</p></div>
+        <div class="card"><span class="num">FROZEN</span><b>Backbone and codecs</b><p>The 3D VAE, the 30-block transformer, the text encoder, and both codecs are frozen. Only the adapter path learns.</p></div>
+      </div>
+    </section>
+
+    <section class="sec" id="results">
+      <h2>Results</h2>
+      <figure class="fig dark"><video src="media/udm101.mp4" poster="media/poster1.jpg" autoplay muted loop playsinline preload="metadata" width="2048" height="548"></video><figcaption>UDM10 clip, not seen in training. A: ground truth. B: decoded 64×64 input. C: frozen backbone without the condition. D: with the edge adapter.</figcaption></figure>
+      <figure class="fig dark"><video src="media/udm102.mp4" poster="media/poster2.jpg" muted loop playsinline preload="none" controls width="2048" height="548"></video><figcaption>Second UDM10 clip. Press play.</figcaption></figure>
+
+      <h3>Drag to compare</h3>
+      <div class="cmp-grid" data-scenes>
+        <div class="compare" style="--pos:50%">
+          <img data-base="media/base" src="media/base1.jpg" alt="Restoration without edge condition" width="512" height="510">
+          <img class="top" data-base="media/edge" src="media/edge1.jpg" alt="Restoration with edge condition" width="512" height="510">
+          <span class="handle" aria-hidden="true"></span>
+          <span class="lab l">With edges</span><span class="lab r">No condition</span>
+          <input type="range" min="0" max="100" value="50" aria-label="Comparison slider: with edges versus no condition">
+        </div>
+        <div class="cmp-side">
+          <div class="seg" role="group" aria-label="Scene"><button type="button" data-scene="1" aria-pressed="true">Scene 1</button><button type="button" data-scene="2" aria-pressed="false">Scene 2</button></div>
+          <div class="mini">
+            <figure><img data-base="media/gt" src="media/gt1.jpg" alt="Ground truth" width="512" height="510"><span>Ground truth</span></figure>
+            <figure><img data-base="media/lq" src="media/lq1.jpg" alt="Decoded low-resolution input" width="512" height="510"><span>Decoded 64×64</span></figure>
+          </div>
+          <p class="callout-note">Look at the arch moulding, the window frames, and the text. The unconditioned backbone produces plausible but wrong structure. With the edge stream, the lines land where they should.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="scale">
+      <h2>Scale sweep: fidelity vs. perception</h2>
+      <p>With the checkpoint, inputs, seed, and timestep fixed, we change only the adapter scale <code>s</code>. Scale 0 is exactly the frozen backbone.</p>
+      <div class="three">
+        <div class="card"><span class="num">s = 0</span><b>Backbone only</b><p>Plausible detail, but structure drifts from the source and frames flicker more.</p></div>
+        <div class="card"><span class="num">SMALL–MEDIUM s</span><b>Best perceptual quality</b><p>Edges correct the layout while the prior keeps textures natural. Perceptual metrics are best in this range.</p></div>
+        <div class="card"><span class="num">LARGE s</span><b>Best fidelity</b><p>Pixel fidelity and temporal stability keep improving, but strong residuals start adding unnatural high frequencies.</p></div>
+      </div>
+      <ul>
+        <li>Every non-zero scale improves pixel fidelity, structural error, and temporal consistency over the backbone.</li>
+        <li>Perceptual quality is <b>not monotonic</b> in the scale. The strongest setting is not the most natural-looking one.</li>
+        <li>No single scale wins on every metric, so the scale is reported as a control variable, not tuned away.</li>
+      </ul>
+    </section>
+
+    <section class="sec" id="open">
+      <h2>Open questions</h2>
+      <ul>
+        <li><b>Real bytes.</b> Rates here are codec likelihood estimates. Arithmetic-coded payloads and multi-rate rate–distortion curves are needed for a bitrate claim.</li>
+        <li><b>What edges cannot carry.</b> Canny gives contours, not texture or color, and decoded edges can break or ring. Confidence gating of unreliable edges and local LQ/edge alignment are the next ablations.</li>
+        <li><b>Objective mismatch.</b> Training uses latent MSE only, while what matters is perceptual quality. A small RGB term and a separate perceptual refinement stage are planned as single-variable ablations.</li>
+        <li><b>Scale of evidence.</b> Independent test splits, more UDM10 clips, and long-video flicker measures are needed for firm conclusions.</li>
+      </ul>
+    </section>
+
+    <section class="sec" id="role">
+      <h2>My role</h2>
+      <p>I designed and trained the Transformer-ControlNet adapter and its multi-scale condition encoder, set up the training and validation protocol, and ran the evaluation (fidelity, perceptual, and temporal metrics, and the adapter-scale sweep).</p>
+      <p>The work builds on an existing dual-stream edge-assisted sender and its codecs, on the DOVE one-step video diffusion model as the frozen backbone, and on the ControlNet idea of zero-initialized conditional branches.</p>
+    </section>
+
+    <div class="next">
+      <a class="pill" href="../stylecod/">← StyleCoD</a>
+      <a class="pill" href="../dermatology/">Next: Dermatology evaluation →</a>
+    </div>
+  </article>
+</div>
+
+<script src="../../assets/js/page.js" defer></script>
+</body>
+</html>
