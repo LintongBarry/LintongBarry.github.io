@@ -53,7 +53,7 @@
 
     <section class="intro">
       <p>Hi, I'm Lintong Han. I like <span class="hl">application-driven research</span>: problems that come from real products and industry, and methods that hold up once they are deployed. My main line of work is generative AI that preserves structure. I use diffusion priors and conditional control to restore and edit images and video under real constraints, such as low-bitrate transmission, while keeping edges, layout, and identity intact.</p>
-      <p>I am also drawn to the startup side of AI: building reliable multi-agent systems, measuring what actually works in deployment, and turning research into products people use.</p>
+      <p>I am also drawn to the startup side of AI: building reliable multi-agent systems, measuring what actually works in deployment, and turning research into products people use. I also bring this to medical imaging and neural signals, where staying faithful to the evidence matters most.</p>
     </section>
 
     <div class="callout">I am open to Ph.D. positions, research collaborations, and industry or startup projects. Please feel free to contact me <span aria-hidden="true">✦</span></div>
@@ -77,11 +77,18 @@
 
       <div class="grid res-grid">
         <article class="proj">
-          <figure class="pthumb"><img src="assets/img/derm.jpg" alt="Traceable dermatology case benchmark and leakage-controlled evaluation pipeline" width="1400" height="697" loading="lazy"></figure>
-          <div class="proj-head"><h3>Dermatology Image–Text Curation and Evidence-Grounded Evaluation</h3></div>
-          <p>Traceable dermatology cases built from the literature, with image–caption alignment, provenance, and leakage control. On top of them sits an evaluation protocol that tests whether a vision-language model's answer depends on the image it was given.</p>
-          <div class="tags"><span class="tag">Vision-language models</span><span class="tag">Medical data</span><span class="tag">Evaluation protocol</span></div>
+          <figure class="pthumb"><img src="research/dermatology/media/my-part.png" alt="Collaborative dermatology evaluation pipeline with my data-layer part highlighted" width="1344" height="596" loading="lazy"></figure>
+          <div class="proj-head"><h3>Evidence-Grounded Dermatology VLM</h3></div>
+          <p>Is a vision-language model actually using the skin image? I built the data layer for a CMU–Yale dermatology evaluation: PubMed Central case reports with images, captions, and articles aligned, licenses tracked, and diagnosis-revealing captions hidden. On top of it, I designed an evidence-checking agent that answers only when the visible lesion and retrieved cases agree.</p>
+          <div class="tags"><span class="tag">Vision-language models</span><span class="tag">Medical data</span><span class="tag">AI agents</span></div>
           <div class="links"><a class="pill sm" href="research/dermatology/">Research page →</a></div>
+        </article>
+        <article class="proj">
+          <figure class="pthumb"><img src="research/eeg-fmri/media/brain-maps.jpg" alt="Cortical maps: EEG source estimate and fMRI ON minus OFF map" width="1800" height="862" loading="lazy"></figure>
+          <div class="proj-head"><h3>EEG Source Imaging Checked Against fMRI</h3></div>
+          <p>I reproduced a published, pretrained EEG source-imaging model on public simultaneous EEG–fMRI recordings, and added a cross-modal check on one cortical surface. Both maps lean posterior as a visual stimulus should, but point-level agreement is low, which points to matched contrasts and region-level comparison next.</p>
+          <div class="tags"><span class="tag">EEG</span><span class="tag">fMRI</span><span class="tag">Neural signals</span><span class="tag">Cross-modal validation</span></div>
+          <div class="links"><a class="pill sm" href="research/eeg-fmri/">Research page →</a></div>
         </article>
       </div>
     </section>
@@ -105,36 +112,36 @@
           <div class="proj-head"><h3>GEO-Loop</h3><a class="pill sm" href="projects/geo-loop/">Project page</a></div>
           <p>A contract-driven multi-agent system that plans, drafts, gates, adapts, and publishes content, then measures whether AI answer engines mention it. Typed handoffs and versioned contracts ensure a failed run never overwrites a validated output.</p>
           <div class="eds"><div class="ed-mini"><b>China edition</b><span>WeChat, Xiaohongshu, Douyin, Zhihu, Baijiahao and more · measured on Doubao</span></div><div class="ed-mini"><b>Global edition</b><span>X, Facebook, Instagram, Reddit, Discord via official APIs · measured on Gemini</span></div></div>
-          <p class="with">With Mengran Wang. 23 agent roles, 1,946 automated tests.</p>
+          <p class="with">Co-designed and developed with Mengran Wang. 23 agent roles, a small typed judge model for release gates, and 1,946 automated tests.</p>
           <div class="tags"><span class="tag">AI Agents</span><span class="tag">LLM</span><span class="tag">China &amp; Global</span><span class="tag">Startup</span></div>
         </article>
 
         <article class="proj" data-tags="medical video">
           <figure class="pthumb"><img src="assets/img/surgical.jpg" alt="" width="1100" height="562" loading="lazy"></figure>
           <div class="proj-head"><h3>Surgical Tool Classification &amp; Localization</h3></div>
-          <p>Weakly supervised 3D U-Net and ResNet pipelines that classify and localize tools in sparsely annotated endoscopic video, where labels list the tools in a clip but not where they are.</p>
+          <p>Weakly supervised 3D U-Net and ResNet pipelines that classify and localize tools in endoscopic video using clip-level labels only. I designed preprocessing for cross-procedure robustness (frame normalization, targeted augmentation, denoising) and benchmarks for classification and localization.</p>
           <div class="tags"><span class="tag">Medical Imaging</span><span class="tag">Weak Supervision</span><span class="tag">Video</span></div>
         </article>
 
         <article class="proj" data-tags="video agents multimodal">
           <figure class="pthumb"><img src="assets/img/goldenera.jpg" alt="" width="1200" height="411" loading="lazy"></figure>
           <div class="proj-head"><h3>“Golden Era” Generative Video</h3></div>
-          <p>A multi-agent text-to-video system for shot composition, camera motion, and cross-shot character consistency. I implemented visual-style prompting and Swapping Self-Attention for local feature transfer, and helped build a human-rated quality dataset.</p>
+          <p>A multi-agent text-to-video system for shot composition, camera motion, and cross-shot character consistency. I implemented visual-style prompting and Swapping Self-Attention in diffusion up-blocks for stable local feature replacement, and helped build a human-rated video quality dataset scored with CLIP similarity, ImageReward, and emotion-aware metrics.</p>
           <div class="tags"><span class="tag">Generative Video</span><span class="tag">AI Agents</span><span class="tag">Multimodal</span></div>
         </article>
 
         <article class="proj" data-tags="edge">
           <figure class="pthumb"><img src="assets/img/eyecod.jpg" alt="" width="1200" height="551" loading="lazy"></figure>
           <div class="proj-head"><h3>EyeCoD: Gaze-Driven Segmentation</h3></div>
-          <p>Compact vision models for on-device eye tracking. I chose MobileSAM for its accuracy–size trade-off and designed dynamic activation gating for Neural Prompt Search adapters, which stabilizes mask updates and cuts latency.</p>
+          <p>Compact vision models for on-device eye tracking. Benchmarking compact ViT variants, I selected MobileSAM: 8% lower MAE at 40% of the model size. Dynamic activation gating for Neural Prompt Search adapters stabilized mask updates and cut inference latency by 15%.</p>
           <div class="tags"><span class="tag">On-device Vision</span><span class="tag">Segmentation</span></div>
         </article>
 
         <article class="proj" data-tags="llm">
           <figure class="pthumb"><img src="assets/img/rag.jpg" alt="" width="1400" height="860" loading="lazy"></figure>
           <div class="proj-head"><h3>Enterprise Scientific Assistant</h3></div>
-          <p>A privately deployed LLM/RAG platform for semantic search and document automation over long institutional documents. It includes a QA set for prompt and LoRA experiments and a user-feedback loop after deployment.</p>
-          <div class="tags"><span class="tag">LLM &amp; RAG</span><span class="tag">Deployment</span></div>
+          <p>A privately deployed LLM + RAG platform (LangChain, FAISS) for semantic search and document automation, managed from scope to delivery. Retrieval over long, structured documents (semantic-aware chunking, embedding selection) raised QA accuracy from 58% to 87%. A 5,000+ QA-pair set supported prompt and LoRA experiments.</p>
+          <div class="tags"><span class="tag">LLM &amp; RAG</span><span class="tag">Industry</span><span class="tag">Deployment</span></div>
         </article>
       </div>
     </section>

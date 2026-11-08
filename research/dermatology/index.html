@@ -3,14 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Dermatology Evidence-Grounded Evaluation · Lintong Han</title>
-<meta name="description" content="Dermatology image–text data curation and an evidence-grounded evaluation protocol for medical vision-language models.">
+<title>Evidence-Grounded Dermatology VLM · Lintong Han</title>
+<meta name="description" content="When a vision-language model diagnoses a skin condition, is it actually using the image? Dermatology data curation and an evidence-checking agent design.">
 <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
 <link rel="stylesheet" href="../../assets/css/page.css">
-<style>.tbl td:nth-child(2), .tbl th:nth-child(2) { text-align: left; }</style>
 <script>try{const t=localStorage.getItem('lh-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 </head>
 <body>
@@ -23,93 +22,91 @@
 <div class="page">
   <nav class="toc" aria-label="On this page">
     <a class="back" href="../../#research">← All work</a>
-    <a href="#problem">Problem</a>
-    <a href="#data">Data curation</a>
-    <a href="#workflow">Workflow</a>
-    <a href="#design">Evaluation design</a>
-    <a href="#built">What is built</a>
-    <a href="#role">Contribution</a>
+    <a href="#why">Why it matters</a>
+    <a href="#role">Completed work</a>
+    <a href="#agent">Next: the agent</a>
+    <a href="#questions">Questions</a>
+    <a href="#test">How to test it</a>
+    <a href="#limits">Limitations</a>
   </nav>
 
   <article class="article">
     <header class="head">
       <p class="kick">Research · Medical multimodal AI</p>
-      <h1><span class="key">Dermatology Image–Text Curation</span> and Evidence-Grounded Evaluation</h1>
-      <p class="lead">Medical vision-language models can produce a fluent diagnosis without really looking at the image. This project builds traceable dermatology cases from the literature and designs an evaluation that tests whether an answer is supported by the evidence actually supplied.</p>
-      <div class="tags"><span class="tag">Vision-language models</span><span class="tag">Dermatology</span><span class="tag">Data provenance</span><span class="tag">Leakage control</span><span class="tag">Evaluation protocol</span></div>
+      <h1><span class="key">Evidence-Grounded</span> Dermatology VLM Agent</h1>
+      <p class="lead">When a vision-language model diagnoses a skin condition, is it actually using the image, and can it tell when the image does not support an answer?</p>
+      <div class="tags"><span class="tag">Vision-language models</span><span class="tag">Dermatology</span><span class="tag">Data provenance</span><span class="tag">Evidence grounding</span><span class="tag">AI agents</span></div>
     </header>
 
-    <section class="sec" id="problem">
-      <h2>Problem</h2>
-      <p>A case taken from a published report is not immediately usable for evaluating a model:</p>
-      <div class="three">
-        <div class="card"><span class="num">01</span><b>Mixed figures</b><p>One figure can contain several panels or modalities: clinical photograph, dermoscopy, histopathology.</p></div>
-        <div class="card"><span class="num">02</span><b>Leaky captions</b><p>The caption often names the diagnosis. The reference interpretation may also depend on examinations the model never sees.</p></div>
-        <div class="card"><span class="num">03</span><b>Answers without looking</b><p>A model can reproduce a plausible description from the history or from retrieved examples without inspecting the current image.</p></div>
-      </div>
-    </section>
+    <div class="three">
+      <div class="card"><span class="num">WHAT I DID</span><b>Built the data layer</b><p>In a CMU–Yale project that evaluates LLM/VLM dermatology diagnosis: clinical images from PubMed Central case reports, aligned with captions and source articles, licenses tracked per item.</p></div>
+      <div class="card"><span class="num">WHO DID THE REST</span><b>The team's evaluator</b><p>The evaluator that scores each answer on factual accuracy, step-wise reasoning, and evidence traceability was designed by collaborators.</p></div>
+      <div class="card"><span class="num">WHAT COMES NEXT</span><b>An evidence check</b><p>Test whether models notice when the lesion is hidden, and whether checking evidence before answering reduces confident wrong answers.</p></div>
+    </div>
 
-    <section class="sec" id="data">
-      <h2>Data curation</h2>
-      <p>The core data work collects dermatology cases from biomedical publications, links them through PubMed and PMCID identifiers, matches figures and panels to their captions, and keeps annotation and quality-control records. Each usable case keeps:</p>
-      <ul>
-        <li>patient grouping, source article, figure or panel, and image type;</li>
-        <li>clinical history, reference interpretation, and where the evidence is located;</li>
-        <li>a permission record for reuse.</li>
-      </ul>
-      <p class="callout-note"><b>Model-visible vs. reference-only.</b> A diagnostic caption can support scoring while staying hidden from inference. All images from one patient or article stay in one partition, so near-duplicates cannot leak between the evaluation sets.</p>
-    </section>
-
-    <section class="sec" id="workflow">
-      <h2>Workflow</h2>
-      <p>The workflow keeps current patient evidence separate from historical examples:</p>
-      <ol>
-        <li>The <b>current case</b> (image and clinical history) is the only evidence about this patient.</li>
-        <li>A <b>static memory</b> holds verified records from a disjoint set of cases, retrieved by text similarity. Its score is a retrieval signal, not a probability that an answer is right.</li>
-        <li>The model answers with its <b>observations, evidence IDs, and what is missing</b>.</li>
-        <li>An optional <b>evidence audit</b> checks the answer against the image, history, and retrieved cases for unsupported observations and missing evidence.</li>
-      </ol>
-      <p>Programmatic checks validate structure and provenance, but they do not establish clinical correctness. Memory stays verified and static, so model-generated interpretations are never automatically promoted to accepted facts.</p>
-    </section>
-
-    <section class="sec" id="design">
-      <h2>Evaluation design</h2>
-      <h3>Does the answer depend on the image?</h3>
-      <p>For each question, the history and question stay fixed while the visual evidence changes: the intact image, no image, the lesion occluded, and an equal-area background region occluded as a control. Answerability is reviewed separately for every probe. A partially masked image does not automatically require the model to abstain.</p>
-      <h3>Compared methods</h3>
-      <div class="tbl-wrap">
-        <table class="tbl">
-          <thead><tr><th>Method</th><th>Added component</th><th>Model calls</th></tr></thead>
-          <tbody>
-            <tr><td>M0</td><td>Direct structured answer</td><td>1</td></tr>
-            <tr><td>M1</td><td>Evidence-first instruction</td><td>1</td></tr>
-            <tr><td>M2</td><td>M1 + verified case retrieval</td><td>1</td></tr>
-            <tr><td>M2-R</td><td>M2 + generic self-review (budget control)</td><td>2</td></tr>
-            <tr><td>M3</td><td>M2 + evidence-audit review</td><td>2</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p>M2-R gives M3's extra call to a generic self-review, so any gain from the audit is not just a gain from spending more compute. Metrics: task accuracy, answer coverage, accuracy given an answer, unsupported answers on unanswerable probes, over-refusal on answerable probes, and independently reviewed unsupported visual claims. Missing outputs stay in the denominator, and the system's own verifier is never the only evaluator.</p>
-    </section>
-
-    <section class="sec" id="built">
-      <h2>What is built</h2>
-      <ul>
-        <li>Offline prompt preparation, source-linked memory retrieval, and a connector for a configured image-capable model endpoint, with raw outputs and usage records preserved.</li>
-        <li>A scorer that checks partition overlap, imported memory IDs, duplicate predictions, response completeness, and reviewed answerability labels.</li>
-        <li>Software tests that confirm four properties: reference answers never enter prompts, memory/test source overlap is rejected, an always-refuse strategy cannot reach perfect accuracy, and missing outputs are counted.</li>
-      </ul>
-      <p class="callout-note">These are software checks, not clinical results. No diagnostic accuracy, hallucination reduction, or memory benefit is claimed until the controlled study runs on real, reviewed cases.</p>
+    <section class="sec" id="why">
+      <h2>Why it matters</h2>
+      <p>Building the data showed how easily a model can answer without looking. Many case-report captions name the diagnosis outright, so a model that reads the caption can score well while ignoring the image. I hid those captions. The same shortcut appears in other forms: the question can give the answer away, or the model can fall back on what is common rather than on what is shown.</p>
+      <p>Evaluations of medical VLMs on radiology images point the same way: when the diagnostic region is removed, many models keep answering instead of saying the evidence is missing. Dermatology adds two complications. Color and lesion boundaries are themselves diagnostic, and lesions look different across skin tones.</p>
     </section>
 
     <section class="sec" id="role">
-      <h2>Contribution</h2>
-      <p>My contribution is the data work: case collection, image–caption alignment, annotation organization, and provenance tracking. The evaluation design and the retrieval and audit scaffold extend that work and were developed with AI assistance.</p>
+      <h2>Completed work and my role</h2>
+      <p>The project evaluates how well LLMs and VLMs diagnose skin conditions. My part was the data the evaluator runs on.</p>
+      <figure class="fig"><img src="media/my-part.png" alt="Completed collaborative pipeline with my part highlighted: collect case reports, align and track, block answer leakage; then the model drafts a diagnosis and the team evaluator scores it" width="1344" height="596" loading="lazy"><figcaption>The completed collaborative pipeline. My part is highlighted.</figcaption></figure>
+      <ul>
+        <li>collected dermatology case reports from PubMed Central, keeping each clinical image together with its caption and the article it came from;</li>
+        <li>aligned images, captions, and articles, and recorded the license of every item, so only reusable material enters the evaluation set;</li>
+        <li>hid captions that name the diagnosis, so a model cannot pass by reading the answer from the text;</li>
+        <li>integrated the result into the team's evaluation pipeline.</li>
+      </ul>
+    </section>
+
+    <section class="sec" id="agent">
+      <h2>Next step: an evidence-checking agent</h2>
+      <p class="callout-note">The agent below is what I would build on top of this data. It is a design, not a result.</p>
+      <figure class="fig"><img src="media/agent-design.png" alt="Proposed agent: skin image and question to VLM perception, criteria-linked lookup into a case library, an evidence check, then either an answer with cited evidence or abstention" width="1344" height="820" loading="lazy"><figcaption>Proposed agent. It answers only when visual and retrieved evidence agree.</figcaption></figure>
+      <ul>
+        <li><b>Case library.</b> Keep the curated reference cases, their cropped lesions, and short notes from the case reports in one place, linked by diagnosis and by the diagnostic criteria each report mentions.</li>
+        <li><b>Criteria-linked lookup.</b> Retrieve reference cases that share a diagnostic criterion with what the model describes, not only the images that look most similar.</li>
+        <li><b>Evidence check.</b> Before answering, check that the findings the answer relies on are visible in the lesion and that the retrieved cases agree. Otherwise, say what is missing.</li>
+        <li><b>Cited answers.</b> Each diagnosis carries the reference cases it used, which is what the team's evaluator already scores for traceability.</li>
+      </ul>
+      <p>This is deliberately simple. My expectation is that the evidence check matters more than the library, and the first experiment is designed to find out.</p>
+    </section>
+
+    <section class="sec" id="questions">
+      <h2>Questions</h2>
+      <ol>
+        <li>Do dermatology VLMs keep answering when the lesion is hidden?</li>
+        <li>Does a simple evidence check reduce those confident answers without hurting accuracy on normal images?</li>
+        <li>Are the failures, and the benefit of the check, the same across skin tones?</li>
+      </ol>
+    </section>
+
+    <section class="sec" id="test">
+      <h2>How to test it</h2>
+      <div class="three">
+        <div class="card"><span class="num">PROBES</span><b>Remove the evidence</b><p>For each image, make versions with the lesion masked, only the lesion kept, and a crop that misses the lesion. Add a false-premise version of each question. Each probe has a correct behavior, such as abstaining when the lesion is hidden.</p></div>
+        <div class="card"><span class="num">MEASURES</span><b>Caution vs. capability</b><p>Accuracy on original images, so caution is not bought with lost capability. How often the model answers confidently after the evidence is removed. The accuracy gap between lesion-only and lesion-masked images. All split by skin type.</p></div>
+        <div class="card"><span class="num">COMPARISON</span><b>One step at a time</b><p>The same models alone, with retrieval over the curated data, and with the evidence check added, so the effect of each step is visible. Public dermoscopy data with lesion masks and skin-type labels complement the curated set.</p></div>
+      </div>
+    </section>
+
+    <section class="sec" id="limits">
+      <h2>Limitations and scope</h2>
+      <ul>
+        <li><b>Research, not clinical use.</b> All data are public, de-identified research sets. Nothing here is a diagnostic tool or has been validated with clinicians.</li>
+        <li><b>Probes are proxies.</b> A greyed-out lesion is a clean test of evidence use, but real failures come from blur, poor lighting, and partial views.</li>
+        <li><b>Abstention has a cost.</b> A system that abstains on everything has a perfect silent-failure rate, so accuracy on intact images and coverage are always reported next to it.</li>
+        <li><b>Skin-tone coverage is thin.</b> Darker skin types are under-represented, so group differences may be noisy and will be reported with confidence intervals.</li>
+        <li><b>Corpus licensing.</b> Crawled images and text are used only under their sources' terms. Only derived references, not raw material, would be released.</li>
+      </ul>
     </section>
 
     <div class="next">
       <a class="pill" href="../video-restoration/">← Video restoration</a>
-      <a class="pill" href="../../">Home →</a>
+      <a class="pill" href="../eeg-fmri/">Next: EEG checked against fMRI →</a>
     </div>
   </article>
 </div>
