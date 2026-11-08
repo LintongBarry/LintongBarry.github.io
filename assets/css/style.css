@@ -191,3 +191,13 @@ p { margin: 0; }
 
 /* single Projects section: featured card above the grid */
 .all-projects { display: grid; gap: 16px; }
+
+/* research interests block inside the intro */
+.interests { display: grid; gap: 10px; background: var(--surface); border: .5px solid var(--line); border-radius: 18px; padding: 16px 20px; box-shadow: var(--shadow); }
+.interests h2 { font: 700 .78rem var(--head); text-transform: uppercase; letter-spacing: .08em; color: var(--teal); }
+.interests ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.interests li { background: var(--navy-soft); border-radius: 12px; padding: 10px 12px; font: 600 .86rem/1.35 var(--head); color: var(--navy-ink); }
+.interests li b { font-weight: 700; }
+.interests p { font-size: .9rem; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.interests p span { font: 600 .74rem var(--head); color: var(--navy); border: .5px solid var(--navy); border-radius: 999px; padding: 3px 10px; }
+@media (max-width: 680px) { .interests ul { grid-template-columns: minmax(0, 1fr); } }
