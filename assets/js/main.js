@@ -26,7 +26,7 @@
   /* filters */
   document.querySelectorAll('[data-filter]').forEach(group => {
     const list = document.getElementById(group.dataset.filter);
-    const items = [...list.children];
+    const items = [...list.querySelectorAll("[data-tags]")];
     group.addEventListener('click', ev => {
       const btn = ev.target.closest('.chip'); if (!btn) return;
       group.querySelectorAll('.chip').forEach(c => { c.classList.toggle('on', c === btn); c.setAttribute('aria-pressed', String(c === btn)); });

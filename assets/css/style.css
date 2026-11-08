@@ -188,3 +188,6 @@ p { margin: 0; }
 .ed-mini b { font: 700 .76rem var(--head); color: var(--navy-ink); }
 .ed-mini span { font-size: .78rem; color: var(--muted); line-height: 1.4; }
 @media (max-width: 520px) { .eds { grid-template-columns: 1fr; } }
+
+/* single Projects section: featured card above the grid */
+.all-projects { display: grid; gap: 16px; }
