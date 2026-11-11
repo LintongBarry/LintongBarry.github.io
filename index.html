@@ -106,14 +106,14 @@
         </article>
         <article class="proj" data-tags="medical agents">
           <figure class="pthumb"><img src="projects/dermatology/media/my-part.png" alt="Collaborative dermatology evaluation pipeline with my data-layer part highlighted" width="1344" height="596" loading="lazy"></figure>
-          <div class="proj-head"><h3>Evidence-Grounded Dermatology VLM</h3><a class="pill sm" href="projects/dermatology/">Details →</a></div>
+          <div class="proj-head"><h3>Evidence-Grounded Dermatology VLM</h3><div class="links"><a class="pill sm" href="projects/dermatology/">Details →</a><a class="pill sm" href="assets/reports/dermatology.pdf" target="_blank" rel="noopener">Report (PDF)</a></div></div>
           <p>Is a vision-language model actually using the skin image? I built the data layer for a CMU–Yale dermatology evaluation: PubMed Central case reports with images, captions, and articles aligned, licenses tracked, and diagnosis-revealing captions hidden. On top of it, I designed an evidence-checking agent that answers only when the visible lesion and retrieved cases agree.</p>
           <div class="tags"><span class="tag">Vision-language models</span><span class="tag">Medical data</span><span class="tag">AI agents</span></div>
         </article>
         <article class="proj" data-tags="medical">
           <figure class="pthumb"><img src="projects/eeg-fmri/media/brain-maps.jpg" alt="Cortical maps: EEG source estimate and fMRI ON minus OFF map" width="1800" height="862" loading="lazy"></figure>
-          <div class="proj-head"><h3>EEG Source Imaging Checked Against fMRI</h3><a class="pill sm" href="projects/eeg-fmri/">Details →</a></div>
-          <p>I reproduced a published, pretrained EEG source-imaging model on public simultaneous EEG–fMRI recordings, and added a cross-modal check on one cortical surface. Both maps lean posterior, as a visual stimulus should, but point-level agreement is low. Matched contrasts and region-level comparison come next.</p>
+          <div class="proj-head"><h3>EEG Source Imaging Checked Against fMRI</h3><div class="links"><a class="pill sm" href="projects/eeg-fmri/">Details →</a><a class="pill sm" href="assets/reports/eeg-fmri.pdf" target="_blank" rel="noopener">Report (PDF)</a></div></div>
+          <p>Does a published, pretrained EEG source-imaging model agree with simultaneous fMRI on a visual task? I reproduced it on open EEG–fMRI recordings and compared both maps on one cortical surface. They did not agree, and because the fMRI reference was itself weak, the report sets out the likely causes and the diagnostics that come next.</p>
           <div class="tags"><span class="tag">EEG</span><span class="tag">fMRI</span><span class="tag">Neural signals</span><span class="tag">Cross-modal validation</span></div>
         </article>
         <article class="proj" data-tags="gen agents">
@@ -136,19 +136,19 @@
         </article>
         <article class="proj" data-tags="medical vision">
           <figure class="pthumb"><img src="assets/img/surgical.jpg" alt="Surgical tool classification versus classification plus localization" width="1100" height="562" loading="lazy"></figure>
-          <div class="proj-head"><h3>Surgical Tool Classification &amp; Localization</h3></div>
-          <p>Weakly supervised 3D U-Net and ResNet pipelines that classify and localize tools in endoscopic video using clip-level labels only. I designed preprocessing for cross-procedure robustness (frame normalization, targeted augmentation, denoising) and benchmarks for classification and localization.</p>
+          <div class="proj-head"><h3>Surgical Tool Classification &amp; Localization</h3><a class="pill sm" href="assets/reports/surgical-tools.pdf" target="_blank" rel="noopener">Report (PDF)</a></div>
+          <p>Which instruments are in view in robotic surgery video, and where, when the only label is which tools were installed on the robot? I worked on weakly supervised ResNet and 3D U-Net pipelines, with a focus on localization from pseudo-labels, on hard frames with occlusion or several tools, and on benchmarks for comparing pipelines.</p>
           <div class="tags"><span class="tag">Medical Imaging</span><span class="tag">Weak Supervision</span><span class="tag">Video</span></div>
         </article>
         <article class="proj" data-tags="vision">
           <figure class="pthumb"><img src="assets/img/eyecod.jpg" alt="EyeCoD gaze-driven segmentation pipeline" width="1200" height="551" loading="lazy"></figure>
-          <div class="proj-head"><h3>EyeCoD: Gaze-Driven Segmentation</h3></div>
-          <p>Compact vision models for on-device eye tracking. Benchmarking compact ViT variants, I selected MobileSAM: 8% lower MAE at 40% of the model size. Dynamic activation gating for Neural Prompt Search adapters stabilized mask updates and cut inference latency by 15%.</p>
+          <div class="proj-head"><h3>EyeCoD: Gaze-Driven Segmentation</h3><a class="pill sm" href="assets/reports/eyecod.pdf" target="_blank" rel="noopener">Report (PDF)</a></div>
+          <p>Once a headset knows where you are looking, can a small model cut out that object fast enough to run on the device? I tested compact promptable segmentation models on mask quality, size, and speed and studied their failure cases; the comparison led the team to MobileSAM. I also tested keeping the previous mask while the gaze is steady.</p>
           <div class="tags"><span class="tag">On-device Vision</span><span class="tag">Segmentation</span></div>
         </article>
         <article class="proj" data-tags="agents">
           <figure class="pthumb"><img src="assets/img/rag.jpg" alt="Enterprise LLM and RAG knowledge platform architecture" width="1400" height="860" loading="lazy"></figure>
-          <div class="proj-head"><h3>Enterprise Scientific Assistant</h3></div>
+          <div class="proj-head"><h3>Enterprise Scientific Assistant</h3><a class="pill sm" href="assets/reports/enterprise-rag.pdf" target="_blank" rel="noopener">Report (PDF)</a></div>
           <p>A privately deployed LLM + RAG platform (LangChain, FAISS) for semantic search and document automation, managed from scope to delivery. Retrieval over long, structured documents (semantic-aware chunking, embedding selection) raised QA accuracy from 58% to 87%. A 5,000+ QA-pair set supported prompt and LoRA experiments.</p>
           <div class="tags"><span class="tag">LLM &amp; RAG</span><span class="tag">Industry</span><span class="tag">Deployment</span></div>
         </article>

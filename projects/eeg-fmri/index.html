@@ -40,12 +40,13 @@
       <h1><span class="key">EEG Source Imaging</span> Checked Against fMRI</h1>
       <p class="lead">A pretrained deep-learning model estimates where on the cortex EEG activity comes from. How far is its output from an independent modality, on real data, out of the box?</p>
       <div class="tags"><span class="tag">EEG</span><span class="tag">fMRI</span><span class="tag">Source imaging</span><span class="tag">Cross-modal validation</span><span class="tag">Reproduction</span></div>
+      <div class="links"><a class="pill sm" href="../../assets/reports/eeg-fmri.pdf" target="_blank" rel="noopener">Technical report (PDF)</a></div>
     </header>
 
     <div class="three">
       <div class="card"><span class="num">WHAT THIS IS</span><b>A reproduction</b><p>A published, pretrained source-imaging network run on public EEG recorded together with fMRI. The model is not mine. The goal was to learn the full path from raw neural signals to a cortical map.</p></div>
       <div class="card"><span class="num">WHAT I ADDED</span><b>A cross-modal check</b><p>The EEG estimate and the fMRI activation map are placed on the same cortical surface and compared with three simple measures, so the EEG result is judged against an independent modality rather than by eye.</p></div>
-      <div class="card"><span class="num">WHAT CAME OUT</span><b>Right direction, wrong details</b><p>Both maps lean toward the back of the brain, where a visual stimulus should act. Point by point, they barely agree.</p></div>
+      <div class="card"><span class="num">WHAT CAME OUT</span><b>No agreement, yet</b><p>The two maps did not agree, and neither concentrated clearly at the back of the brain. Since the fMRI reference was itself weak, the cause is still open.</p></div>
     </div>
 
     <section class="sec" id="data">
@@ -78,7 +79,7 @@
 
     <section class="sec" id="results">
       <h2>Results</h2>
-      <p>The two maps agree on the broad direction and disagree on the details.</p>
+      <p>The two maps did not agree, globally or at their peaks.</p>
       <div class="metrics">
         <div class="tbl-wrap"><table class="tbl">
           <thead><tr><th>Measure</th><th>EEG source</th><th>fMRI</th></tr></thead>
@@ -88,26 +89,27 @@
           <thead><tr><th>Agreement between maps</th><th>Value</th></tr></thead>
           <tbody>
             <tr><td>Global Pearson correlation</td><td>−0.01</td></tr>
-            <tr><td>Top-5% overlap, Dice</td><td>0.04</td></tr>
+            <tr><td>Top-5% overlap, Dice (chance: 0.05)</td><td>0.04</td></tr>
             <tr><td>Top-5% overlap, IoU</td><td>0.02</td></tr>
           </tbody>
         </table></div>
       </div>
       <figure class="fig"><img src="media/brain-maps.jpg" alt="Top views of the cortex: sparse EEG source estimate on the left, smooth widespread fMRI ON minus OFF map on the right" width="1800" height="862" loading="lazy"><figcaption>Seen side by side, the EEG estimate (left) is sparse and spotty, while the fMRI map (right) is smooth and widespread.</figcaption></figure>
-      <p>Both maps carry slightly more activity at the back of the brain than on average, the expected direction for a visual stimulus. But the point-by-point correlation is essentially zero, and only a few percent of the strongest points coincide.</p>
+      <p>The correlation is essentially zero, and the overlap of the strongest 5% of points is at or below what random placement would give. Neither map is strongly concentrated at the back of the brain: the fMRI ratio rises only slightly toward the occipital pole, which is weak for a full-field checkerboard, and the EEG ratio does not rise.</p>
     </section>
 
     <section class="sec" id="meaning">
-      <h2>What it means and what I would change</h2>
-      <p>A near-zero correlation does not by itself say the EEG estimate is wrong. Several things in this setup push agreement down, and the next step is to separate them:</p>
+      <h2>Why the maps might disagree</h2>
+      <p>This result does not by itself show that the model fails on real visual data. Several parts of the pipeline could produce the same disagreement, and I have not yet separated them:</p>
       <ol>
-        <li><b>Different signals.</b> EEG measures fast electrical activity, and fMRI measures slow changes in blood oxygenation. They should overlap in location, not match point for point.</li>
-        <li><b>Different contrasts.</b> The EEG map was taken from stimulus periods only, while the fMRI map is an ON-minus-OFF difference. Using the same contrast for both is the first fix.</li>
-        <li><b>Template versus real head.</b> A pretrained network assumes a standard head model. A subject-specific one would likely move the estimate.</li>
-        <li><b>A very strict comparison.</b> Matching the top 5% of 20,484 points penalizes a sparse map against a smooth one. Comparing at the level of the 994 regions, or after matched smoothing, is fairer.</li>
+        <li><b>A weak fMRI reference.</b> A raw ON-minus-OFF difference ignores the hemodynamic delay and does not model noise or motion. Its weak posterior ratio suggests it does not cleanly show visual cortex.</li>
+        <li><b>A steady-state stimulus.</b> The 12 Hz flicker drives a response at the flicker frequency. Averaging over the whole stimulus period, rather than looking at the 12 Hz component, may wash it out.</li>
+        <li><b>In-scanner EEG artifacts.</b> Gradient and cardiac residuals are large compared with visual responses.</li>
+        <li><b>Input mismatch with the model.</b> Units, scaling, and the mapping onto the model's 75-channel layout need to be checked against what the network was trained on.</li>
+        <li><b>Template anatomy.</b> Both maps sit on a template surface, not the subject's own cortex.</li>
       </ol>
-      <p><b>Next steps</b>, in order: match the contrasts, compare at the region level, repeat on more subjects, then try a subject-specific head model.</p>
-      <p><b>Limitations.</b> One subject and one session. There is no ground truth beyond fMRI, which is itself an indirect measure. The network was used as released, not retrained.</p>
+      <p><b>Next steps</b>, each chosen to rule causes in or out rather than to make the maps agree: confirm a 12 Hz peak at occipital channels in and out of the scanner; build a proper fMRI reference with a general linear model; run a classical inverse method on the same data as a baseline; replace the analytic chance level with a spin test; and repeat on more subjects.</p>
+      <p><b>Limitations.</b> One subject, template anatomy, and a simple fMRI reference. The network was used as released, not tuned, so the numbers describe an off-the-shelf reproduction rather than an evaluation of the model.</p>
     </section>
 
     <div class="next">
