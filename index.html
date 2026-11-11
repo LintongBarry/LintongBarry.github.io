@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=20261110">
 <script>try{const t=localStorage.getItem('lh-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 </head>
 <body>
@@ -23,6 +23,7 @@
   <nav aria-label="Sections">
     <a href="#about">About</a>
     <a href="#projects">Projects</a>
+    <a href="#reports">Reports</a>
   </nav>
   <button class="theme" id="theme" type="button" aria-label="Toggle dark mode">
     <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path class="sun" d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.66-5.66 1.41-1.41M4.93 19.07l1.41-1.41m0-11.32L4.93 4.93m14.14 14.14-1.41-1.41M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
@@ -156,6 +157,43 @@
       </div>
     </section>
 
+    <section id="reports" class="block">
+      <h2>Reports</h2>
+      <p class="sub">Write-ups of my own work · not peer reviewed</p>
+      <div class="reps">
+        <a class="rep" href="assets/reports/eeg-fmri.pdf" target="_blank" rel="noopener">
+          <span class="rep-meta">Technical report · 2026</span>
+          <span class="rep-title">Does a Pretrained Deep EEG Source-Imaging Model Agree with fMRI on a Visual Task?</span>
+          <span class="rep-desc">A reproduction of a published model on open simultaneous EEG–fMRI data, with a cross-modal check and a documented negative result.</span>
+          <span class="rep-cta">PDF ↗</span>
+        </a>
+        <a class="rep" href="assets/reports/dermatology.pdf" target="_blank" rel="noopener">
+          <span class="rep-meta">Technical report · 2026</span>
+          <span class="rep-title">DermTrace: Evidence-Grounded Agents for Vision-Language Diagnosis in Dermatology</span>
+          <span class="rep-desc">The data curation behind a CMU–Yale evaluation, and a proposal for agents that tie every diagnostic claim to the image or a cited case.</span>
+          <span class="rep-cta">PDF ↗</span>
+        </a>
+        <a class="rep" href="assets/reports/enterprise-rag.pdf" target="_blank" rel="noopener">
+          <span class="rep-meta">Application report · 2026</span>
+          <span class="rep-title">Traceable Question Answering over Enterprise Research Documents</span>
+          <span class="rep-desc">A privately deployed RAG system that links every answer to its source, and a human–AI task evaluation.</span>
+          <span class="rep-cta">PDF ↗</span>
+        </a>
+        <a class="rep" href="assets/reports/surgical-tools.pdf" target="_blank" rel="noopener">
+          <span class="rep-meta">Project note · 2024</span>
+          <span class="rep-title">Finding Surgical Tools with Weak Labels</span>
+          <span class="rep-desc">Classification and localization in robotic surgery video when the only label is which tools were installed.</span>
+          <span class="rep-cta">PDF ↗</span>
+        </a>
+        <a class="rep" href="assets/reports/eyecod.pdf" target="_blank" rel="noopener">
+          <span class="rep-meta">Project note · 2023–2024</span>
+          <span class="rep-title">Testing Small Vision Models for On-Device Eye Tracking</span>
+          <span class="rep-desc">Comparing compact promptable segmentation models for gaze-driven segmentation on a headset.</span>
+          <span class="rep-cta">PDF ↗</span>
+        </a>
+      </div>
+    </section>
+
     <footer class="footer">
       <span>© Lintong Han</span>
       <span>Figures are from the author's own work. Benchmark photos are from Open Images (CC BY 2.0).</span>
@@ -163,6 +201,6 @@
   </main>
 </div>
 
-<script src="assets/js/main.js" defer></script>
+<script src="assets/js/main.js?v=20261110" defer></script>
 </body>
 </html>
